@@ -23,6 +23,145 @@
 - No "magic numbers" without citations
 - Continuous validation against benchmarks
 
+### Self-Governance (Bootstrapping)
+
+> _"We eat our own cooking."_ Q-DNA's governance principles apply to Q-DNA's development.
+
+---
+
+## Governance Framework for Q-DNA Development
+
+This section defines how we apply Q-DNA principles to our own development process.
+
+### Task Risk Grading
+
+Every development task is classified using Q-DNA's L1/L2/L3 system:
+
+| Grade  | Development Task Type         | Verification Required | Approval       |
+| :----- | :---------------------------- | :-------------------- | :------------- |
+| **L1** | Docs, comments, typos         | Self-review           | None           |
+| **L2** | New features, refactors       | Code review + tests   | PR             |
+| **L3** | Security, crypto, trust logic | Formal review + SME   | Human sign-off |
+
+### Task Classification Matrix
+
+| Task Pattern                                | Auto-Grade | Rationale            |
+| :------------------------------------------ | :--------- | :------------------- |
+| `trust_*.py`, `identity_*.py`               | **L3**     | Security-critical    |
+| `*_engine.py`, `server.py`                  | **L2**     | Core logic           |
+| `tests/*.py`, `docs/*.md`                   | **L1**     | Supporting artifacts |
+| Schema changes (`*.sql`)                    | **L3**     | Data integrity       |
+| Config changes (`*.json`, `*.md` in rules/) | **L2**     | Policy-affecting     |
+
+### Pre-Commit Audit Protocol
+
+Before every commit, the developer applies a self-audit:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   PRE-COMMIT AUDIT                          │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  1. RISK GRADE: What grade is this change?                  │
+│     □ L1 (docs/typos) □ L2 (features) □ L3 (security)      │
+│                                                             │
+│  2. RESEARCH BACKING: Is there a citation? (L2+ required)   │
+│     □ Spec section: §_____                                  │
+│     □ Research doc: _____                                   │
+│                                                             │
+│  3. TEST COVERAGE: Did you add/update tests?                │
+│     □ Yes □ No (explain: _______)                          │
+│                                                             │
+│  4. FAILURE MODES: What could go wrong?                     │
+│     □ Listed in commit message                              │
+│     □ Archived to Shadow Genome if discovered               │
+│                                                             │
+│  5. VERIFICATION: How was this verified?                    │
+│     □ Linter passed □ Tests passed □ Manual review          │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Commit Message Schema
+
+All commits must follow this semantic format with risk metadata:
+
+```
+<type>(<scope>): <description>
+
+[L<grade>] <spec-reference>
+
+<body>
+
+Failure-Modes: <list any discovered issues>
+Research: <citation if applicable>
+```
+
+**Example:**
+
+```
+feat(trust): Implement λ-decay formula
+
+[L3] §5.3.3
+
+Adds EWMA-based decay with context-sensitive lambda values.
+High-risk: 0.94, Low-risk: 0.97 per RiskMetrics research.
+
+Failure-Modes: None discovered
+Research: TRUST_DYNAMICS.md §2.3
+```
+
+### Shadow Genome for Development
+
+When we discover issues during development, archive them:
+
+| Failure                                 | Discovery Date | Resolution                 | Constraint Added                              |
+| :-------------------------------------- | :------------- | :------------------------- | :-------------------------------------------- |
+| Fake API keys triggered push protection | 2025-12-17     | Replaced with placeholders | Never use `sk_live_*` patterns                |
+| SCI threshold mismatch (30 vs 35)       | 2025-12-17     | Fixed to spec              | Always cross-check spec before impl           |
+| Git repo rooted at G:/                  | 2025-12-17     | Re-initialized             | Always verify `git rev-parse --show-toplevel` |
+
+### HILS for Development
+
+Apply **High Inspection / Low Severity** to our own process:
+
+| Infraction                | Detection            | Response                |
+| :------------------------ | :------------------- | :---------------------- |
+| Commit without risk grade | 100% (pre-push hook) | Warning + reclassify    |
+| L3 without spec reference | 100% (PR template)   | Block merge until cited |
+| Test coverage gap         | CI/CD                | Flag, don't block       |
+| Missing research citation | Code review          | Request citation        |
+
+### Trust Metrics for Development
+
+Track our own "development credibility":
+
+| Metric                   | Measurement            | Target |
+| :----------------------- | :--------------------- | :----: |
+| Commit-to-Spec Alignment | % commits citing spec  |  >80%  |
+| Test Pass Rate           | CI/CD results          |  100%  |
+| L3 Approval Latency      | Time to human sign-off |  <24h  |
+| Shadow Genome Capture    | Failures archived      |  100%  |
+| Research Coverage        | Claims with citations  |  >90%  |
+
+### Verification Tiers for Development
+
+| Tier  | Method              | Applies To  | Latency |
+| :---- | :------------------ | :---------- | :------ |
+| **1** | Linter (pre-commit) | All Python  | <1s     |
+| **2** | pytest (CI/CD)      | All code    | <30s    |
+| **3** | Human Review (PR)   | L2+ changes | <24h    |
+
+### Bootstrapping Checkpoint
+
+Before completing Phase 8.5, we must demonstrate:
+
+- [ ] All L3 tasks have spec citations
+- [ ] Shadow Genome has ≥3 archived learnings
+- [ ] Pre-commit audit is consistently applied
+- [ ] Commit message schema is followed
+- [ ] Development trust metrics meet targets
+
 ---
 
 ## Phase Summary
@@ -97,33 +236,36 @@ This phase bridges the gap between research specification (v2.4) and implementat
 
 These tasks must be completed in order as each builds on the previous.
 
-| ID     | Task                           | Spec       | Dependencies | Effort | Deliverable                |
-| :----- | :----------------------------- | :--------- | :----------- | :----: | :------------------------- |
-| **A1** | λ-Decay Engine                 | §5.3.3     | None         |   4h   | `trust_engine.py`          |
-|        | - Implement EWMA formula       |            |              |        | `calculate_decay()`        |
-|        | - Context-based λ (0.94/0.97)  |            |              |        | `get_lambda_for_context()` |
-|        | - Integration with SCI updates |            |              |        | `update_trust_score()`     |
-| **A2** | Transitive Trust               | §5.3.5     | A1           |   3h   | `transitive_trust.py`      |
-|        | - δ damping factor (0.5)       |            |              |        | `propagate_trust()`        |
-|        | - Max hop limit (3)            |            |              |        | `get_trust_path()`         |
-|        | - Sybil resistance checks      |            |              |        | `check_anchor_distance()`  |
-| **A3** | Lewicki-Bunker Stages          | §5.3.6     | A2           |   2h   | Stage mapping              |
-|        | - CBT threshold (0.0-0.5)      |            |              |        | `get_trust_stage()`        |
-|        | - KBT threshold (0.5-0.8)      |            |              |        | `stage_behavior()`         |
-|        | - IBT threshold (>0.8)         |            |              |        | `demote_stage()`           |
-| **A4** | Micro-Penalty Layer            | §9.1       | A3           |   4h   | Audit integration          |
-|        | - Schema violation (0.5%)      |            |              |        | `apply_micro_penalty()`    |
-|        | - API misuse (0.5%)            |            |              |        | `detect_violation_type()`  |
-|        | - Stale citation (1%)          |            |              |        | `log_micro_penalty()`      |
-|        | - Daily aggregate (2%)         |            |              |        | `aggregate_daily()`        |
-| **A5** | Cooling-Off Periods            | §9.2, §9.3 | A4           |   2h   | Recovery gates             |
-|        | - 24h gate (honest error)      |            |              |        | `check_cooling_off()`      |
-|        | - 48h gate (manipulation)      |            |              |        | `start_cooling_off()`      |
-|        | - Block trust repair during    |            |              |        | `can_recover_trust()`      |
-| **A6** | Probationary Period            | §5.3.2     | A5           |   2h   | New source protection      |
-|        | - 5 verification floor         |            |              |        | `is_in_probation()`        |
-|        | - 30 day expiry                |            |              |        | `check_probation_expiry()` |
-|        | - Floor protection (>35)       |            |              |        | `apply_probation_floor()`  |
+**Note:** All tasks in Track A are **L3** (security-critical) per the Task Classification Matrix.
+
+| ID     | Task           | Spec   | Grade  | Dependencies | Effort | Deliverable       |
+| :----- | :------------- | :----- | :----: | :----------- | :----: | :---------------- |
+| **A1** | λ-Decay Engine | §5.3.3 | **L3** | None         |   4h   | `trust_engine.py` |
+
+| | - Implement EWMA formula | | | | `calculate_decay()` |
+| | - Context-based λ (0.94/0.97) | | | | `get_lambda_for_context()` |
+| | - Integration with SCI updates | | | | `update_trust_score()` |
+| **A2** | Transitive Trust | §5.3.5 | A1 | 3h | `transitive_trust.py` |
+| | - δ damping factor (0.5) | | | | `propagate_trust()` |
+| | - Max hop limit (3) | | | | `get_trust_path()` |
+| | - Sybil resistance checks | | | | `check_anchor_distance()` |
+| **A3** | Lewicki-Bunker Stages | §5.3.6 | A2 | 2h | Stage mapping |
+| | - CBT threshold (0.0-0.5) | | | | `get_trust_stage()` |
+| | - KBT threshold (0.5-0.8) | | | | `stage_behavior()` |
+| | - IBT threshold (>0.8) | | | | `demote_stage()` |
+| **A4** | Micro-Penalty Layer | §9.1 | A3 | 4h | Audit integration |
+| | - Schema violation (0.5%) | | | | `apply_micro_penalty()` |
+| | - API misuse (0.5%) | | | | `detect_violation_type()` |
+| | - Stale citation (1%) | | | | `log_micro_penalty()` |
+| | - Daily aggregate (2%) | | | | `aggregate_daily()` |
+| **A5** | Cooling-Off Periods | §9.2, §9.3 | A4 | 2h | Recovery gates |
+| | - 24h gate (honest error) | | | | `check_cooling_off()` |
+| | - 48h gate (manipulation) | | | | `start_cooling_off()` |
+| | - Block trust repair during | | | | `can_recover_trust()` |
+| **A6** | Probationary Period | §5.3.2 | A5 | 2h | New source protection |
+| | - 5 verification floor | | | | `is_in_probation()` |
+| | - 30 day expiry | | | | `check_probation_expiry()` |
+| | - Floor protection (>35) | | | | `apply_probation_floor()` |
 
 **Track A Total:** ~17 hours
 
