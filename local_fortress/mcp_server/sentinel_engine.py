@@ -270,6 +270,62 @@ class SentinelEngine:
         
         return findings
     
+    def check_static_analysis(self, content: str) -> List[str]:
+        """
+        Tier 1: External Static Analysis (Pylint, MyPy).
+        Spec §3.3.1: "Fast-fail < 5s".
+        Runs strict error checking on the provided content.
+        """
+        findings = []
+        import tempfile
+        import subprocess
+        import os
+
+        # Only check Python content
+        # Heuristic: verify basic python syntax with AST first (already implicit via other checks)
+        # or just try/catch the tool execution.
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8') as tmp:
+            tmp.write(content)
+            tmp_path = tmp.name
+
+        try:
+            # 1. Pylint (Errors only for speed)
+            # --disable=E0401: Ignore import errors (dependencies might be missing in isolation)
+            result = subprocess.run(
+                ['pylint', '-E', '--disable=E0401', '--msg-template={line}: {msg_id} {msg}', tmp_path], 
+                capture_output=True, text=True
+            )
+            # Pylint exit codes: 1=fatal, 2=error, 4=warning, etc. Bitmask.
+            # If errors found, stdout has them.
+            if result.stdout:
+                for line in result.stdout.splitlines():
+                    if line.strip() and not line.startswith("*************"):
+                        findings.append(f"PYLINT:{line.strip()}")
+
+            # 2. MyPy
+            result_mypy = subprocess.run(
+                ['mypy', '--ignore-missing-imports', '--no-error-summary', tmp_path],
+                capture_output=True, text=True
+            )
+            if result_mypy.returncode != 0 and result_mypy.stdout:
+                for line in result_mypy.stdout.splitlines():
+                    # Filter out "Success" messages if any
+                    if "Success:" not in line:
+                        clean_line = line.replace(tmp_path, "input.py")
+                        findings.append(f"MYPY:{clean_line.strip()}")
+
+        except FileNotFoundError:
+            # Bootstrapping: degrade gracefully if tools missing
+            findings.append("WARN: Static analysis tools (pylint/mypy) not found in environment.")
+        except Exception as e:
+            findings.append(f"WARN: Static analysis failed: {str(e)}")
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+            
+        return findings
+
     def audit(self, file_path: str, content: str) -> AuditResult:
         """
         Main entry point for the Sentinel.
@@ -289,6 +345,11 @@ class SentinelEngine:
         # 3. Static Safety Checks (All Grades)
         all_findings.extend(self.check_secrets(content))
         all_findings.extend(self.check_unsafe_functions(content))
+        
+        # 3.1 Tier 1: Static Analysis (New in v2.4, Phase 8.5)
+        # Skip for empty content or non-python (heuristic: file extension or content)
+        if file_path.endswith('.py') or 'def ' in content:
+            all_findings.extend(self.check_static_analysis(content))
         
         # 4. L2+ Checks
         if risk_grade in [RiskGrade.L2, RiskGrade.L3]:
