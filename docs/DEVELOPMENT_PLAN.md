@@ -238,31 +238,31 @@ These tasks must be completed in order as each builds on the previous.
 
 **Note:** All tasks in Track A are **L3** (security-critical) per the Task Classification Matrix.
 
-| ID     | Task           | Spec   | Grade  | Dependencies | Effort | Deliverable       |
-| :----- | :------------- | :----- | :----: | :----------- | :----: | :---------------- |
-| **A1** | λ-Decay Engine | §5.3.3 | **L3** | None         |   4h   | `trust_engine.py` |
+| ID     | Task              | Spec   | Grade  | Dependencies | Effort | Deliverable       |
+| :----- | :---------------- | :----- | :----: | :----------- | :----: | :---------------- |
+| **A1** | ✅ λ-Decay Engine | §5.3.3 | **L3** | None         |   4h   | `trust_engine.py` |
 
 | | - Implement EWMA formula | | | | `calculate_decay()` |
 | | - Context-based λ (0.94/0.97) | | | | `get_lambda_for_context()` |
 | | - Integration with SCI updates | | | | `update_trust_score()` |
-| **A2** | Transitive Trust | §5.3.5 | A1 | 3h | `transitive_trust.py` |
+| **A2** | ✅ Transitive Trust | §5.3.5 | A1 | 3h | `transitive_trust.py` |
 | | - δ damping factor (0.5) | | | | `propagate_trust()` |
 | | - Max hop limit (3) | | | | `get_trust_path()` |
 | | - Sybil resistance checks | | | | `check_anchor_distance()` |
-| **A3** | Lewicki-Bunker Stages | §5.3.6 | A2 | 2h | Stage mapping |
+| **A3** | ✅ Lewicki-Bunker Stages | §5.3.6 | A2 | 2h | Stage mapping |
 | | - CBT threshold (0.0-0.5) | | | | `get_trust_stage()` |
 | | - KBT threshold (0.5-0.8) | | | | `stage_behavior()` |
 | | - IBT threshold (>0.8) | | | | `demote_stage()` |
-| **A4** | Micro-Penalty Layer | §9.1 | A3 | 4h | Audit integration |
+| **A4** | ✅ Micro-Penalty Layer | §9.1 | A3 | 4h | Audit integration |
 | | - Schema violation (0.5%) | | | | `apply_micro_penalty()` |
 | | - API misuse (0.5%) | | | | `detect_violation_type()` |
 | | - Stale citation (1%) | | | | `log_micro_penalty()` |
 | | - Daily aggregate (2%) | | | | `aggregate_daily()` |
-| **A5** | Cooling-Off Periods | §9.2, §9.3 | A4 | 2h | Recovery gates |
+| **A5** | ✅ Cooling-Off Periods | §9.2, §9.3 | A4 | 2h | Recovery gates |
 | | - 24h gate (honest error) | | | | `check_cooling_off()` |
 | | - 48h gate (manipulation) | | | | `start_cooling_off()` |
 | | - Block trust repair during | | | | `can_recover_trust()` |
-| **A6** | Probationary Period | §5.3.2 | A5 | 2h | New source protection |
+| **A6** | ✅ Probationary Period | §5.3.2 | A5 | 2h | New source protection |
 | | - 5 verification floor | | | | `is_in_probation()` |
 | | - 30 day expiry | | | | `check_probation_expiry()` |
 | | - Floor protection (>35) | | | | `apply_probation_floor()` |
@@ -277,7 +277,7 @@ Multi-tier verification must be built layer by layer.
 
 | ID     | Task                        | Spec   | Dependencies | Effort | Deliverable                  |
 | :----- | :-------------------------- | :----- | :----------- | :----: | :--------------------------- |
-| **B1** | Tier 1: Static Analysis     | §3.3.1 | None         |   3h   | Pipeline integration         |
+| **B1** | ✅ Tier 1: Static Analysis  | §3.3.1 | None         |   3h   | Pipeline integration         |
 |        | - Pylint integration        |        |              |        | `run_tier1_checks()`         |
 |        | - Flake8 integration        |        |              |        | `parse_linter_output()`      |
 |        | - MyPy integration          |        |              |        | `aggregate_static_results()` |
@@ -300,7 +300,7 @@ These can be implemented independently alongside Track A and B.
 
 | ID     | Task                        | Spec   | Dependencies | Effort | Deliverable                  |
 | :----- | :-------------------------- | :----- | :----------- | :----: | :--------------------------- |
-| **C1** | Backpressure Mechanism      | §2.5.1 | None         |   3h   | Server hardening             |
+| **C1** | ✅ Backpressure Mechanism   | §2.5.1 | None         |   3h   | Server hardening             |
 |        | - Queue bound (50 requests) |        |              |        | `check_queue_capacity()`     |
 |        | - 80% warning signal        |        |              |        | `emit_backpressure_signal()` |
 |        | - Load shedding at 100%     |        |              |        | `shed_load()`                |
