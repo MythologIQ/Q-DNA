@@ -111,6 +111,15 @@ def get_reputation_recovery():
         _reputation_recovery = ReputationRecovery()
     return _reputation_recovery
 
+_traffic_monitor = None
+
+def get_traffic_monitor():
+    global _traffic_monitor
+    if _traffic_monitor is None:
+        from local_fortress.mcp_server.traffic_control import get_traffic_monitor as _get_tm
+        _traffic_monitor = _get_tm()
+    return _traffic_monitor
+
 # ============================================================================
 # Database Utilities
 # ============================================================================
@@ -165,46 +174,59 @@ def audit_code(file_path: str, content: str) -> str:
     """
     from local_fortress.mcp_server.sentinel_engine import SentinelEngine
     
-    sentinel = SentinelEngine()
-    result = sentinel.audit(file_path, content)
-    
-    # Log the audit request
-    log_event(
-        agent_role="Scrivener",
-        event_type="AUDIT_REQUEST",
-        risk_grade=result.risk_grade,
-        payload=json.dumps({"file": file_path, "content_length": len(content)})
-    )
-    
-    # Log the verdict
-    verdict_event = "AUDIT_PASS" if result.verdict == "PASS" else "AUDIT_FAIL"
-    if result.verdict == "L3_REQUIRED":
-        verdict_event = "L3_APPROVAL_REQUEST"
-        # Add to approval queue
-        request_l3_approval(
-            artifact_hash=compute_entry_hash(str(time.time()), "sentinel", content, ""),
-            reason=result.rationale
-        )
-    
-    entry_hash = log_event(
-        agent_role="Sentinel",
-        event_type=verdict_event,
-        risk_grade=result.risk_grade,
-        payload=result.to_json()
-    )
-    
-    # Archive failures to Shadow Genome
-    if result.verdict == "FAIL" and result.failure_modes:
-        archive_failure(
-            input_vector=content[:500],  # Truncate for storage
-            failure_mode=result.failure_modes[0].split(":")[0],
-            context=json.dumps({"file": file_path, "risk_grade": result.risk_grade}),
-            causal_vector=result.rationale
-        )
-    
-    response = result.to_dict()
-    response["ledger_hash"] = entry_hash
-    return json.dumps(response)
+    # Check backpressure (Phase 8.5)
+    try:
+        with get_traffic_monitor().request_access():
+            sentinel = SentinelEngine()
+            result = sentinel.audit(file_path, content)
+            
+            # Log the audit request
+            log_event(
+                agent_role="Scrivener",
+                event_type="AUDIT_REQUEST",
+                risk_grade=result.risk_grade,
+                payload=json.dumps({"file": file_path, "content_length": len(content)})
+            )
+            
+            # Log the verdict
+            verdict_event = "AUDIT_PASS" if result.verdict == "PASS" else "AUDIT_FAIL"
+            if result.verdict == "L3_REQUIRED":
+                verdict_event = "L3_APPROVAL_REQUEST"
+                # Add to approval queue
+                request_l3_approval(
+                    artifact_hash=compute_entry_hash(str(time.time()), "sentinel", content, ""),
+                    reason=result.rationale
+                )
+            
+            entry_hash = log_event(
+                agent_role="Sentinel",
+                event_type=verdict_event,
+                risk_grade=result.risk_grade,
+                payload=result.to_json()
+            )
+            
+            # Archive failures to Shadow Genome
+            if result.verdict == "FAIL" and result.failure_modes:
+                archive_failure(
+                    input_vector=content[:500],  # Truncate for storage
+                    failure_mode=result.failure_modes[0].split(":")[0],
+                    context=json.dumps({"file": file_path, "risk_grade": result.risk_grade}),
+                    causal_vector=result.rationale
+                )
+            
+            response = result.to_dict()
+            response["ledger_hash"] = entry_hash
+            return json.dumps(response)
+            
+    except RuntimeError as e:
+        # Handle 503 Backpressure
+        return json.dumps({
+            "verdict": "ERROR",
+            "risk_grade": "L3",
+            "rationale": str(e),
+            "failure_modes": ["SERVICE_UNAVAILABLE"],
+            "requires_approval": False
+        })
 
 @mcp.tool()
 def audit_claim(text: str) -> str:
