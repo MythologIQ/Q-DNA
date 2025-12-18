@@ -348,13 +348,13 @@ These can be implemented independently alongside Track A and B.
 
 Requires machine learning capabilities beyond current bootstrapping scope.
 
-| Item                     | Status | Blocker                | Priority | Est. Effort |
-| :----------------------- | :----: | :--------------------- | :------- | :---------- |
-| Semantic Drift Monitor   |   ✅   |                        | High     | 16h         |
-| Diversity Quorum (L3)    |   ✅   |                        | High     | 12h         |
-| Real CBMC Integration    |   🚧   | External tool setup    | Medium   | 8h          |
-| Adversarial Review       |   ❌   | Devil's advocate model | Medium   | 8h          |
-| Echo/Paraphrase Detector |   ❌   | N-gram/embedding       | Low      | 6h          |
+| Item                     | Status | Blocker             | Priority | Est. Effort |
+| :----------------------- | :----: | :------------------ | :------- | :---------- |
+| Semantic Drift Monitor   |   ✅   |                     | High     | 16h         |
+| Diversity Quorum (L3)    |   ✅   |                     | High     | 12h         |
+| Real CBMC Integration    |   🚧   | External tool setup | Medium   | 8h          |
+| Adversarial Review       |   ✅   |                     | Medium   | 8h          |
+| Echo/Paraphrase Detector |   ❌   | N-gram/embedding    | Low      | 6h          |
 
 ---
 
