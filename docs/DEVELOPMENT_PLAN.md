@@ -166,16 +166,16 @@ Before completing Phase 8.5, we must demonstrate:
 
 ## Phase Summary
 
-| Phase   | Focus                             |    Status     | Compliance |
-| :------ | :-------------------------------- | :-----------: | :--------: |
-| 1-4     | Foundation                        |  ✅ Complete  |     -      |
-| 5       | P0: Critical Security             |  ✅ Complete  |     -      |
-| 6       | P1: Citation & Fallback           |  ✅ Complete  |     -      |
-| 7       | P2: Advanced Features             |  ✅ Complete  |     -      |
-| 8       | Research Integration              |  ✅ Complete  |    98%     |
-| **8.5** | **Trust Dynamics & Verification** | 🚧 **Active** |     -      |
-| 9       | P3: ML-Dependent                  |   🔬 Future   |     -      |
-| 10      | Production Hardening              | ✅ Initiated  |     -      |
+| Phase | Focus                         |    Status     | Compliance |
+| :---- | :---------------------------- | :-----------: | :--------: |
+| 1-4   | Foundation                    |  ✅ Complete  |     -      |
+| 5     | P0: Critical Security         |  ✅ Complete  |     -      |
+| 6     | P1: Citation & Fallback       |  ✅ Complete  |     -      |
+| 7     | P2: Advanced Features         |  ✅ Complete  |     -      |
+| 8     | Research Integration          |  ✅ Complete  |    98%     |
+| 8.5   | Trust Dynamics & Verification |  ✅ Complete  |    100%    |
+| **9** | **P3: ML-Dependent**          | 🚧 **Active** |     -      |
+| 10    | Production Hardening          | ✅ Initiated  |     -      |
 
 ---
 
@@ -275,20 +275,20 @@ These tasks must be completed in order as each builds on the previous.
 
 Multi-tier verification must be built layer by layer.
 
-| ID     | Task                        | Spec   | Dependencies | Effort | Deliverable                  |
-| :----- | :-------------------------- | :----- | :----------- | :----: | :--------------------------- |
-| **B1** | ✅ Tier 1: Static Analysis  | §3.3.1 | None         |   3h   | Pipeline integration         |
-|        | - Pylint integration        |        |              |        | `run_tier1_checks()`         |
-|        | - Flake8 integration        |        |              |        | `parse_linter_output()`      |
-|        | - MyPy integration          |        |              |        | `aggregate_static_results()` |
-| **B2** | Tier 2: Design by Contract  | §3.3.2 | B1           |   4h   | `deal` integration           |
-|        | - Install `deal` library    |        |              |        | `setup_dbc_environment()`    |
-|        | - Pre/post condition hooks  |        |              |        | `verify_contracts()`         |
-|        | - Z3 solver connection      |        |              |        | `formal_contract_check()`    |
-| **B3** | Tier 3: Formal Verification | §3.3.3 | B2, Phase 9  |  8h+   | External tools               |
-|        | - PyVeritas setup           |        |              |        | Future                       |
-|        | - CBMC integration          |        |              |        | Future                       |
-|        | - CrossHair fallback        |        |              |        | Future                       |
+| ID     | Task                          | Spec   | Dependencies | Effort | Deliverable                  |
+| :----- | :---------------------------- | :----- | :----------- | :----: | :--------------------------- |
+| **B1** | ✅ Tier 1: Static Analysis    | §3.3.1 | None         |   3h   | Pipeline integration         |
+|        | - Pylint integration          |        |              |        | `run_tier1_checks()`         |
+|        | - Flake8 integration          |        |              |        | `parse_linter_output()`      |
+|        | - MyPy integration            |        |              |        | `aggregate_static_results()` |
+| **B2** | ✅ Tier 2: Design by Contract | §3.3.2 | B1           |   4h   | `deal` integration           |
+|        | - Install `deal` library      |        |              |        | `setup_dbc_environment()`    |
+|        | - Pre/post condition hooks    |        |              |        | `verify_contracts()`         |
+|        | - Z3 solver connection        |        |              |        | `formal_contract_check()`    |
+| **B3** | Tier 3: Formal Verification   | §3.3.3 | B2, Phase 9  |  8h+   | External tools               |
+|        | - PyVeritas setup             |        |              |        | Future                       |
+|        | - CBMC integration            |        |              |        | Future                       |
+|        | - CrossHair fallback          |        |              |        | Future                       |
 
 **Track B Total:** ~7 hours (excl. B3)
 
@@ -305,7 +305,7 @@ These can be implemented independently alongside Track A and B.
 |        | - 80% warning signal        |        |              |        | `emit_backpressure_signal()` |
 |        | - Load shedding at 100%     |        |              |        | `shed_load()`                |
 |        | - LIFO/FIFO queue types     |        |              |        | `configure_queue_type()`     |
-| **C2** | Mode Transition Triggers    | §12    | C1           |   2h   | Auto-mode switching          |
+| **C2** | ✅ Mode Transition Triggers | §12    | C1           |   2h   | Auto-mode switching          |
 |        | - CPU >70% (5 min) → LEAN   |        |              |        | `monitor_cpu()`              |
 |        | - Queue >50 → SURGE         |        |              |        | `monitor_queue_depth()`      |
 |        | - Security event → SAFE     |        |              |        | `trigger_safe_mode()`        |

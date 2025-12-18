@@ -292,7 +292,7 @@ def log_event(agent_role: str, event_type: str, risk_grade: str, payload: str) -
     return entry_hash
 
 @mcp.tool()
-def archive_failure(input_vector: str, failure_mode: str, context: str, causal_vector: str) -> str:
+def archive_failure(input_vector: str, failure_mode: str, context: str, causal_vector: str, decision_rationale: str = None) -> str:
     """
     Archive a failure to the Shadow Genome for Fail Forward training.
     
@@ -301,6 +301,7 @@ def archive_failure(input_vector: str, failure_mode: str, context: str, causal_v
         failure_mode: Category (HARDCODED_SECRET, INJECTION_RISK, etc.)
         context: JSON of environmental context
         causal_vector: Why it failed (Sentinel rationale)
+        decision_rationale: The agent's intent/reasoning for choosing this solution
         
     Returns:
         The genome_id of the archived failure
@@ -309,9 +310,9 @@ def archive_failure(input_vector: str, failure_mode: str, context: str, causal_v
         cursor = conn.cursor()
         try:
             cursor.execute("""
-                INSERT INTO shadow_genome (input_vector, context, failure_mode, causal_vector)
-                VALUES (?, ?, ?, ?)
-            """, (input_vector, context, failure_mode, causal_vector))
+                INSERT INTO shadow_genome (input_vector, decision_rationale, context, failure_mode, causal_vector)
+                VALUES (?, ?, ?, ?, ?)
+            """, (input_vector, decision_rationale, context, failure_mode, causal_vector))
             conn.commit()
             return str(cursor.lastrowid)
         except sqlite3.Error as e:

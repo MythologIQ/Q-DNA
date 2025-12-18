@@ -93,33 +93,54 @@ class ContractVerifier:
 
         return metadata
 
-    def verify_with_z3(self, func: Callable, symbolic_constraints: Dict[str, Any]) -> bool:
+    def verify_with_z3(self, symbolic_constraints: Dict[str, tuple[float, float]]) -> tuple[bool, Optional[str]]:
         """
         Perform formal verification using Z3 solver.
+        Checks if the provided constraints are satisfiable (i.e., a valid solution exists).
 
-        This is a placeholder for future Tier 3 integration.
-        Spec §3.3.3: Full formal verification is Phase 9 (P3 ML-Dependent).
-
+        Spec §3.3.3: Tier 3 Formal Verification
+        
         Args:
-            func: Function to verify
-            symbolic_constraints: Symbolic constraints for verification
+            symbolic_constraints: Dictionary of variable names to (min, max) tuples.
+                                  e.g. {'trust_score': (0.0, 1.0)}
 
         Returns:
-            True if verification succeeds, False otherwise
+            (is_satisfiable, message)
         """
         if not self.z3_available:
             self.logger.warning("Z3 verification requested but solver not available")
-            return False
+            return False, "Z3 not installed"
 
-        # Placeholder for Z3 integration
-        # Future implementation will:
-        # 1. Convert pre/post conditions to Z3 constraints
-        # 2. Create symbolic variables for function inputs
-        # 3. Use Z3 to prove contracts are satisfiable
-        # 4. Return verification result
+        try:
+            import z3
+            
+            solver = z3.Solver()
+            variables = {}
 
-        self.logger.info("Z3 formal verification not yet implemented (Phase 9)")
-        return True  # Optimistic default for now
+            # 1. Create variables and Apply Constraints
+            for name, (min_val, max_val) in symbolic_constraints.items():
+                # Create a Real variable for each constraint
+                var = z3.Real(name)
+                variables[name] = var
+                
+                # Add constraints: min <= var <= max
+                solver.add(var >= min_val)
+                solver.add(var <= max_val)
+
+            # 2. Check Satisfiability
+            result = solver.check()
+            
+            if result == z3.sat:
+                model = solver.model()
+                return True, f"Satisfiable. Example: {model}"
+            elif result == z3.unsat:
+                return False, "Unsatisfiable constraints (Logical Contradiction)"
+            else:
+                return False, "Solver failed to determine satisfiability (Unknown)"
+
+        except Exception as e:
+            self.logger.error(f"Z3 verification error: {e}")
+            return False, str(e)
 
 
 # Global verifier instance

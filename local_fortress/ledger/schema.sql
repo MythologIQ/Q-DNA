@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS shadow_genome (
     genome_id INTEGER PRIMARY KEY AUTOINCREMENT,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     input_vector TEXT NOT NULL,       -- The code/claim that failed
+    decision_rationale TEXT,          -- Agent's intent/reasoning for this choice
     context JSON NOT NULL,            -- Environment, dependencies, etc.
     failure_mode TEXT NOT NULL,       -- Category of failure (e.g., INJECTION, HALLUCINATION)
     causal_vector TEXT,               -- Why it failed (Sentinel rationale)
