@@ -369,6 +369,7 @@ Requires machine learning capabilities beyond current bootstrapping scope.
 | Documentation Site      |     📋      | MkDocs/Docusaurus                   | 6h          |
 | Pilot Deployment        |     📋      | Internal dogfooding                 | 8h          |
 | Benchmark Validation    |     📋      | Trap dataset execution              | 8h          |
+| Persistent Daemon       |     📋      | Local background service (`qdna-d`) | 6h          |
 
 ---
 
