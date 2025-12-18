@@ -33,6 +33,7 @@ class FailureMode(Enum):
     PII_EXPOSURE = "PII_EXPOSURE"
     DIVISION_BY_ZERO = "DIVISION_BY_ZERO"
     INJECTION_RISK = "INJECTION_RISK"
+    LOGICAL_CONTRADICTION = "LOGICAL_CONTRADICTION"
 
 @dataclass
 class AuditResult:
@@ -246,6 +247,48 @@ class SentinelEngine:
         
         return findings
     
+    def check_formal_contracts(self, content: str) -> List[str]:
+        """
+        Phase 9.1: Tier 3 Formal Verification.
+        Extracts constraints from @deal decorators and validates them with Z3.
+        """
+        findings = []
+        try:
+            from local_fortress.mcp_server.contract_verifier import get_contract_verifier
+            verifier = get_contract_verifier()
+            
+            if not verifier.z3_available:
+                return ["WARN: Z3 solver unavailable for Tier 3 verification"]
+
+            # Heuristic Constraint Extractor (Bootstrap Phase)
+            # Looks for: @deal.pre(lambda ... 0 <= var <= 1)
+            # This bridges the gap until full PyVeritas transpiler is ready.
+            
+            # Regex to find range constraints in deal decorators
+            # Matches: 0<=x<=1 or -1.0 <= x <= 1.0
+            range_pattern = r'([-]?\d+\.?\d*)\s*<=\s*([a-zA-Z_]\w*)\s*<=\s*([-]?\d+\.?\d*)'
+            matches = re.finditer(range_pattern, content)
+            
+            constraints = {}
+            for m in matches:
+                min_val = float(m.group(1))
+                var_name = m.group(2)
+                max_val = float(m.group(3))
+                constraints[var_name] = (min_val, max_val)
+
+            if constraints:
+                # Run Z3 Verification
+                is_sat, msg = verifier.verify_with_z3(constraints)
+                if not is_sat:
+                    findings.append(f"{FailureMode.LOGICAL_CONTRADICTION.value}: {msg}")
+                    
+        except ImportError:
+            findings.append("WARN: ContractVerifier module not found")
+        except Exception as e:
+            findings.append(f"WARN: Formal verification failed: {str(e)}")
+            
+        return findings
+
     def bounded_model_check(self, content: str) -> List[str]:
         """
         Simulate Bounded Model Checking (L3).
@@ -253,11 +296,11 @@ class SentinelEngine:
         """
         findings = []
         
-        # Division by zero check
+        # 1. Division by zero check
         if re.search(r'/\s*0\b', content):
             findings.append(FailureMode.DIVISION_BY_ZERO.value)
         
-        # SQL Injection patterns
+        # 2. SQL Injection patterns
         sql_injection = [
             r'execute\(.+%s',
             r'cursor\.execute\(.+\+',
@@ -267,6 +310,9 @@ class SentinelEngine:
             if re.search(pattern, content):
                 findings.append(FailureMode.INJECTION_RISK.value)
                 break
+        
+        # 3. Formal Contract Verification (Z3)
+        findings.extend(self.check_formal_contracts(content))
         
         return findings
     
