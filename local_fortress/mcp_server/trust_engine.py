@@ -4,10 +4,14 @@ Implements context-based trust decay, EWMA updates, and transitive trust logic.
 
 Research: RiskMetrics [TRUST-004], EigenTrust [TRUST-001]
 Spec: §5.3.3, §5.3.5
+
+[L3] Design by Contract: All critical functions protected with formal contracts
+Research: deal library documentation, Z3 solver integration
 """
 import time
 from enum import Enum, auto
 from typing import List, Optional
+import deal
 
 # Lambda Decay Parameters (Spec §5.3.3)
 LAMBDA_HIGH_RISK = 0.94  # Reactive: ~95% weight on last 60 observations
@@ -49,26 +53,40 @@ PROBATION_DURATION = 30 * 24 * 3600
 PROBATION_FLOOR_SCI = 0.35 # Normalized 35/100
 
 class TrustEngine:
+    @deal.post(lambda result: 0.0 < result <= 1.0)
+    @deal.post(lambda result: result in [LAMBDA_HIGH_RISK, LAMBDA_LOW_RISK])
     def get_lambda(self, context: TrustContext) -> float:
         """
         Returns decay factor λ based on context risk.
         Research: RiskMetrics [TRUST-004] - λ=0.94 applies to high volatility contexts.
+
+        Contracts:
+        - POST: Result must be between 0.0 and 1.0 (exclusive lower, inclusive upper)
+        - POST: Result must be one of the defined lambda values
         """
         if context == TrustContext.HIGH_RISK:
             return LAMBDA_HIGH_RISK
         return LAMBDA_LOW_RISK
 
+    @deal.pre(lambda _self, current_score, **kwargs: 0.0 <= current_score <= 1.0)
+    @deal.pre(lambda _self, outcome_score, **kwargs: 0.0 <= outcome_score <= 1.0)
+    @deal.post(lambda result: 0.0 <= result <= 1.0)
     def calculate_ewma_update(self, current_score: float, outcome_score: float, context: TrustContext) -> float:
         """
         Calculates new trust score using EWMA (Exponentially Weighted Moving Average).
         Formula: T(t) = λ * T(t-1) + (1-λ) * Outcome
-        
+
+        Contracts:
+        - PRE: current_score must be in [0.0, 1.0]
+        - PRE: outcome_score must be in [0.0, 1.0]
+        - POST: Result must be in [0.0, 1.0]
+
         Args:
             current_score: Current trust metric (float)
             outcome_score: Score of the new event (float)
                            e.g., PASS=1.0, FAIL=0.0
             context: Risk context for selecting lambda
-            
+
         Returns:
             Updated trust score (float)
         """
@@ -77,38 +95,48 @@ class TrustEngine:
         new_score = (lam * current_score) + ((1 - lam) * outcome_score)
         return new_score
 
+    @deal.pre(lambda _self, current_score, **kwargs: 0.0 <= current_score <= 1.0)
+    @deal.pre(lambda _self, last_update_ts, **kwargs: last_update_ts >= 0)
+    @deal.pre(lambda _self, baseline=0.4, **kwargs: 0.0 <= baseline <= 1.0)
+    @deal.post(lambda result: 0.0 <= result <= 1.0)
     def calculate_temporal_decay(self, current_score: float, last_update_ts: float, baseline: float = 0.4) -> float:
         """
         Applies temporal decay for inactivity.
         Spec §5.3.4: Drift toward baseline by 1 unit per 30 days (normalized).
-        
+
+        Contracts:
+        - PRE: current_score must be in [0.0, 1.0]
+        - PRE: last_update_ts must be non-negative
+        - PRE: baseline must be in [0.0, 1.0]
+        - POST: Result must be in [0.0, 1.0]
+
         Args:
             current_score: Current trust score
             last_update_ts: Unix timestamp of last update
             baseline: Target baseline score (default 0.4 for T4/Neutral)
-            
+
         Returns:
             Decayed score
         """
         now = time.time()
         if last_update_ts > now:
             return current_score # Guard against future timestamps
-            
+
         days_inactive = (now - last_update_ts) / (24 * 3600)
-        
+
         if days_inactive <= 0:
             return current_score
-            
-        # Rate: 1% drift per 30 days (assuming 0-1 scale) ?? 
+
+        # Rate: 1% drift per 30 days (assuming 0-1 scale) ??
         # Spec says "1 point per 30 days" (on 0-100 scale).
         # On 0.0-1.0 scale, this is 0.01 per 30 days.
         decay_amount = (days_inactive / 30.0) * 0.01
-        
+
         if current_score > baseline:
             return max(baseline, current_score - decay_amount)
         elif current_score < baseline:
             return min(baseline, current_score + decay_amount)
-        
+
         return current_score
 
     
@@ -163,17 +191,28 @@ class TrustEngine:
 
     # --- A4: Micro-Penalties (Spec §9.1) ---
 
+    @deal.pre(lambda _self, current_score, **kwargs: 0.0 <= current_score <= 1.0)
+    @deal.pre(lambda _self, daily_penalty_sum, **kwargs: 0.0 <= daily_penalty_sum <= DAILY_PENALTY_CAP)
+    @deal.post(lambda result: 0.0 <= result[0] <= 1.0)  # new_score
+    @deal.post(lambda result: 0.0 <= result[1] <= DAILY_PENALTY_CAP)  # applied_penalty
     def calculate_micro_penalty(self, current_score: float, penalty_type: MicroPenaltyType, daily_penalty_sum: float) -> tuple[float, float]:
         """
         Applies micro-penalty with daily cap.
+
+        Contracts:
+        - PRE: current_score must be in [0.0, 1.0]
+        - PRE: daily_penalty_sum must be in [0.0, DAILY_PENALTY_CAP]
+        - POST: new_score must be in [0.0, 1.0]
+        - POST: applied_penalty must be in [0.0, DAILY_PENALTY_CAP]
+
         Returns (new_score, applied_penalty).
         """
         base_penalty = penalty_type.value
-        
+
         # Check remaining cap
         remaining_cap = max(0.0, DAILY_PENALTY_CAP - daily_penalty_sum)
         applied_penalty = min(base_penalty, remaining_cap)
-        
+
         # Apply to score
         new_score = max(0.0, current_score - applied_penalty)
         return new_score, applied_penalty
@@ -207,29 +246,37 @@ class TrustEngine:
 
     # --- A2: Transitive Trust Stubs (for Phase 8.5 Track A integration) ---
     
+    @deal.pre(lambda _self, trust_path: all(0.0 <= score <= 1.0 for score in trust_path))
+    @deal.pre(lambda _self, trust_path: len(trust_path) <= MAX_HOPS)
+    @deal.post(lambda result: 0.0 <= result <= 1.0)
     def calculate_transitive_trust(self, trust_path: List[float]) -> float:
         """
         Calculates transitive trust through a chain of intermediaries.
         Spec §5.3.5: Trust(A->C) = Trust(A->B) * Trust(B->C) * δ
-        
+
+        Contracts:
+        - PRE: All trust scores in path must be in [0.0, 1.0]
+        - PRE: Path length must not exceed MAX_HOPS (3)
+        - POST: Result must be in [0.0, 1.0]
+
         Args:
             trust_path: List of trust scores (0.0-1.0) along the path.
                         e.g., [Trust(A->B), Trust(B->C)]
-                        
+
         Returns:
             Derived trust score (0.0-1.0)
         """
         if not trust_path:
             return 0.0
-            
+
         if len(trust_path) > MAX_HOPS:
             return 0.0  # Trust evaporates beyond max hops
-            
+
         # Start with the first link
         trust = trust_path[0]
-        
+
         # Multiply by subsequent links and damping factor
         for next_link in trust_path[1:]:
             trust = trust * next_link * DAMPING_FACTOR
-            
+
         return trust
