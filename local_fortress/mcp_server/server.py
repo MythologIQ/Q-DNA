@@ -95,6 +95,15 @@ def get_drift_monitor():
         _drift_monitor = SemanticDriftMonitor(DB_PATH)
     return _drift_monitor
 
+_diversity_manager = None
+
+def get_diversity_manager():
+    global _diversity_manager
+    if _diversity_manager is None:
+        from local_fortress.mcp_server.diversity_manager import get_diversity_manager as _get_dm
+        _diversity_manager = _get_dm()
+    return _diversity_manager
+
 # P2 module loaders
 _deferral_manager = None
 _mode_enforcer = None
@@ -1003,6 +1012,53 @@ def check_semantic_drift(agent_did: str, content: str) -> str:
         "similarity": round(similarity, 4),
         "message": msg
     })
+
+@mcp.tool()
+def request_diversity_vote(artifact_hash: str, content: str, family: str, verdict: str, reason: str, confidence: float) -> str:
+    """
+    Record a vote from a specific model family for L3 diversity quorum.
+    Spec §7.2: Requires >= 2 families for L3 consensus.
+    
+    Args:
+        artifact_hash: ID of the artifact being debated
+        content: The artifact content (only needed for first vote to init)
+        family: GPT, CLAUDE, GEMINI, LLAMA, MISTRAL
+        verdict: PASS, FAIL, ABSTAIN
+        reason: Justification
+        confidence: 0.0 to 1.0
+    """
+    from local_fortress.mcp_server.diversity_manager import ModelFamily, Verdict
+    
+    dm = get_diversity_manager()
+    
+    # Init if needed
+    dm.start_debate(artifact_hash, content)
+    
+    try:
+        fam = ModelFamily[family.upper()]
+        verd = Verdict[verdict.upper()]
+    except KeyError:
+        return json.dumps({"error": "Invalid family or verdict enum"})
+        
+    dm.cast_vote(artifact_hash, fam, verd, reason, confidence)
+    
+    return json.dumps({
+        "status": "VOTED",
+        "artifact_hash": artifact_hash,
+        "family": fam.value
+    })
+
+@mcp.tool()
+def check_diversity_quorum(artifact_hash: str) -> str:
+    """
+    Check if an L3 artifact has met diversity quorum.
+    
+    Returns:
+        JSON with quorum status (PASSED, FAILED, PENDING, DEADLOCK)
+    """
+    dm = get_diversity_manager()
+    result = dm.check_quorum(artifact_hash)
+    return json.dumps(result)
 
 @mcp.tool()
 def get_low_credibility_sources(threshold: float = 50) -> str:
