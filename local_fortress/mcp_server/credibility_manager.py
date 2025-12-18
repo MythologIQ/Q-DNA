@@ -16,6 +16,7 @@ import sqlite3
 import time
 import json
 import hashlib
+import deal
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass, asdict
 from enum import Enum
@@ -138,6 +139,10 @@ class CredibilityManager:
         """
         Automatically classify a source URL into a tier.
         """
+        return self._classify_source_tier(url)
+
+    @deal.post(lambda result: isinstance(result, ReferenceTier))
+    def _classify_source_tier(self, url: str) -> ReferenceTier:
         url_lower = url.lower()
         
         # T1: Official specs, RFCs, IEEE, government
@@ -233,6 +238,10 @@ class CredibilityManager:
             row = cursor.fetchone()
             return row[0] if row else None
     
+            return row[0] if row else None
+    
+    @deal.pre(lambda _self, url, success: isinstance(success, bool))
+    @deal.post(lambda result: 0 <= result <= 100)
     def update_sci_on_verification(self, url: str, success: bool) -> float:
         """
         Update SCI based on verification result.
@@ -276,6 +285,11 @@ class CredibilityManager:
             
             return new_sci
     
+            return new_sci
+    
+    @deal.pre(lambda _self, source_url, current_grade: current_grade in ["L1", "L2", "L3"])
+    @deal.post(lambda result: isinstance(result[0], bool))
+    @deal.post(lambda result: result[1] in ["L1", "L2", "L3"] or result[1].startswith("REJECT"))
     def should_escalate_risk(self, source_url: str, current_grade: str) -> Tuple[bool, str]:
         """
         Check if risk grade should be escalated based on source SCI.

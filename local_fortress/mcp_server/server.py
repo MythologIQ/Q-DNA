@@ -86,6 +86,15 @@ def get_trust_manager():
         _trust_manager = TrustManager(DB_PATH)
     return _trust_manager
 
+_drift_monitor = None
+
+def get_drift_monitor():
+    global _drift_monitor
+    if _drift_monitor is None:
+        from local_fortress.mcp_server.semantic_drift import SemanticDriftMonitor
+        _drift_monitor = SemanticDriftMonitor(DB_PATH)
+    return _drift_monitor
+
 # P2 module loaders
 _deferral_manager = None
 _mode_enforcer = None
@@ -953,6 +962,46 @@ def apply_trust_decay(agent_did: str) -> str:
         "agent_did": agent_did,
         "decay_applied": changed,
         "current_score": new_score
+    })
+
+@mcp.tool()
+def check_semantic_drift(agent_did: str, content: str) -> str:
+    """
+    Check if content exhibits semantic drift from agent's baseline.
+    Spec §7.1: Cosine similarity < 0.85 triggers flag.
+    
+    Args:
+        agent_did: The agent's DID
+        content: The text content to analyze
+        
+    Returns:
+        JSON with drift status and similarity score
+    """
+    monitor = get_drift_monitor()
+    
+    # Check if model is available
+    if monitor.get_model() is None:
+        return json.dumps({
+            "status": "SKIPPED",
+            "reason": "Embedding model unavailable",
+            "has_drift": False
+        })
+
+    has_drift, similarity, msg = monitor.check_drift(agent_did, content)
+    
+    if has_drift:
+        log_event("Sentinel", "DRIFT_DETECTED", "L2", json.dumps({
+            "agent_did": agent_did,
+            "similarity": similarity,
+            "threshold": 0.85, # Config from monitor
+            "sample_snippet": content[:50]
+        }))
+    
+    return json.dumps({
+        "status": "CHECKED",
+        "has_drift": has_drift,
+        "similarity": round(similarity, 4),
+        "message": msg
     })
 
 @mcp.tool()
