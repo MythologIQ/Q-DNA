@@ -258,7 +258,7 @@ class SentinelEngine:
         findings = []
         
         try:
-            from local_fortress.mcp_server.echo_detector import get_echo_detector
+            from .echo_detector import get_echo_detector
             detector = get_echo_detector()
             
             if reference_text:
@@ -290,7 +290,7 @@ class SentinelEngine:
         """
         findings = []
         try:
-            from local_fortress.mcp_server.contract_verifier import get_contract_verifier
+            from .contract_verifier import get_contract_verifier
             verifier = get_contract_verifier()
             
             if not verifier.z3_available:
@@ -335,7 +335,7 @@ class SentinelEngine:
         
         # 1. Try CBMC verification first
         try:
-            from local_fortress.mcp_server.cbmc_verifier import get_cbmc_verifier, CBMCStatus
+            from .cbmc_verifier import get_cbmc_verifier, CBMCStatus
             verifier = get_cbmc_verifier()
             
             # Use heuristic mode for Python code (no C transpilation yet)

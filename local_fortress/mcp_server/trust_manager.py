@@ -13,7 +13,7 @@ from typing import Optional, Dict, Any, List
 from datetime import date
 import logging
 
-from local_fortress.mcp_server.trust_engine import (
+from .trust_engine import (
     TrustEngine,
     TrustContext,
     TrustStage,

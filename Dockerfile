@@ -12,6 +12,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
+# Copy application code
+COPY . /app
+
+# Install QoreLogic Gatekeeper package
+WORKDIR /app/local_fortress
+RUN pip install --prefix=/install .
+
 # Runtime stage
 FROM python:3.11-slim
 
@@ -20,9 +27,7 @@ WORKDIR /app
 # Create non-root user
 RUN groupadd -r qorelogic && useradd -r -g qorelogic qorelogic
 
-# Install runtime dependencies (e.g. sqlite3 library is usually standard in python images, 
-# but Z3 might need libs if not statically linked. z3-solver pip package includes binaries)
-# Installing minimal runtime deps if needed.
+# Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
@@ -30,7 +35,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy installed packages from builder
 COPY --from=builder /install /usr/local
 
-# Copy application code
+# Copy application code (needed for DB fallback, though package is installed)
 COPY . /app
 
 # Set permissions
@@ -42,8 +47,8 @@ USER qorelogic
 # Environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
+ENV QORELOGIC_DB_PATH=/app/ledger/qorelogic_soa_ledger.db
 
 # Entrypoint
-# Assuming the server is run via python module or script
-# Based on existing patterns: python local_fortress/mcp_server/server.py
-ENTRYPOINT ["python", "local_fortress/mcp_server/server.py"]
+# Use the installed CLI entry point
+ENTRYPOINT ["qorelogic-server"]

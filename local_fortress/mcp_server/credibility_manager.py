@@ -518,7 +518,7 @@ class SentinelFallback:
     def check_sentinel_health(self) -> bool:
         """Check if Sentinel is available."""
         try:
-            from local_fortress.mcp_server.sentinel_engine import SentinelEngine
+            from .sentinel_engine import SentinelEngine
             sentinel = SentinelEngine()
             # Simple health check - can we instantiate?
             self.sentinel_available = True

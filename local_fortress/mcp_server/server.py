@@ -25,7 +25,16 @@ from pathlib import Path
 mcp = FastMCP("QoreLogic Sovereign Gatekeeper v2.1")
 
 # Configuration
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "ledger", "qorelogic_soa_ledger.db")
+# Configuration
+# Support external configuration for packaging
+DB_PATH = os.environ.get("QORELOGIC_DB_PATH")
+if not DB_PATH:
+    # Fallback to local repo path for dev mode
+    DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "ledger", "qorelogic_soa_ledger.db")
+
+# Ensure directory exists
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+
 
 # Import P0 modules (lazy load to avoid circular imports)
 _identity_manager = None
@@ -36,62 +45,70 @@ _quarantine_manager = None
 _quarantine_manager = None
 _sentinel_fallback = None
 _trust_manager = None
+_telemetry_manager = None
 
 def get_identity_manager():
     global _identity_manager
     if _identity_manager is None:
-        from local_fortress.mcp_server.identity_manager import IdentityManager
+        from .identity_manager import IdentityManager
         _identity_manager = IdentityManager()
     return _identity_manager
 
 def get_volatility_manager():
     global _volatility_manager
     if _volatility_manager is None:
-        from local_fortress.mcp_server.volatility_manager import VolatilityManager
+        from .volatility_manager import VolatilityManager
         _volatility_manager = VolatilityManager()
     return _volatility_manager
 
 def get_sla_manager():
     global _sla_manager
     if _sla_manager is None:
-        from local_fortress.mcp_server.volatility_manager import SLAManager
+        from .volatility_manager import SLAManager
         _sla_manager = SLAManager()
     return _sla_manager
 
 def get_credibility_manager():
     global _credibility_manager
     if _credibility_manager is None:
-        from local_fortress.mcp_server.credibility_manager import CredibilityManager
+        from .credibility_manager import CredibilityManager
         _credibility_manager = CredibilityManager()
     return _credibility_manager
 
 def get_quarantine_manager():
     global _quarantine_manager
     if _quarantine_manager is None:
-        from local_fortress.mcp_server.credibility_manager import QuarantineManager
+        from .credibility_manager import QuarantineManager
         _quarantine_manager = QuarantineManager()
     return _quarantine_manager
 
 def get_sentinel_fallback():
     global _sentinel_fallback
     if _sentinel_fallback is None:
-        from local_fortress.mcp_server.credibility_manager import SentinelFallback
+        from .credibility_manager import SentinelFallback
         _sentinel_fallback = SentinelFallback()
     return _sentinel_fallback
 
 def get_trust_manager():
     global _trust_manager
     if _trust_manager is None:
-        from local_fortress.mcp_server.trust_manager import TrustManager
+        from .trust_manager import TrustManager
         _trust_manager = TrustManager(DB_PATH)
     return _trust_manager
+
+def get_telemetry_manager():
+    global _telemetry_manager
+    if _telemetry_manager is None:
+        from .telemetry_manager import TelemetryManager
+        _telemetry_manager = TelemetryManager(DB_PATH)
+    return _telemetry_manager
 
 _drift_monitor = None
 
 def get_drift_monitor():
     global _drift_monitor
     if _drift_monitor is None:
-        from local_fortress.mcp_server.semantic_drift import SemanticDriftMonitor
+        from .semantic_drift import SemanticDriftMonitor
         _drift_monitor = SemanticDriftMonitor(DB_PATH)
     return _drift_monitor
 
@@ -100,7 +117,7 @@ _diversity_manager = None
 def get_diversity_manager():
     global _diversity_manager
     if _diversity_manager is None:
-        from local_fortress.mcp_server.diversity_manager import get_diversity_manager as _get_dm
+        from .diversity_manager import get_diversity_manager as _get_dm
         _diversity_manager = _get_dm()
     return _diversity_manager
 
@@ -109,7 +126,7 @@ _adversarial_engine = None
 def get_adversarius():
     global _adversarial_engine
     if _adversarial_engine is None:
-        from local_fortress.mcp_server.adversarial_engine import get_adversarial_engine as _get_ae
+        from .adversarial_engine import get_adversarial_engine as _get_ae
         _adversarial_engine = _get_ae()
     return _adversarial_engine
 
@@ -122,28 +139,28 @@ _reputation_recovery = None
 def get_deferral_manager():
     global _deferral_manager
     if _deferral_manager is None:
-        from local_fortress.mcp_server.advanced_features import DeferralManager
+        from .advanced_features import DeferralManager
         _deferral_manager = DeferralManager()
     return _deferral_manager
 
 def get_mode_enforcer():
     global _mode_enforcer
     if _mode_enforcer is None:
-        from local_fortress.mcp_server.advanced_features import ModeEnforcer
+        from .advanced_features import ModeEnforcer
         _mode_enforcer = ModeEnforcer()
     return _mode_enforcer
 
 def get_calibration_tracker():
     global _calibration_tracker
     if _calibration_tracker is None:
-        from local_fortress.mcp_server.advanced_features import CalibrationTracker
+        from .advanced_features import CalibrationTracker
         _calibration_tracker = CalibrationTracker()
     return _calibration_tracker
 
 def get_reputation_recovery():
     global _reputation_recovery
     if _reputation_recovery is None:
-        from local_fortress.mcp_server.advanced_features import ReputationRecovery
+        from .advanced_features import ReputationRecovery
         _reputation_recovery = ReputationRecovery()
     return _reputation_recovery
 
@@ -152,7 +169,7 @@ _traffic_monitor = None
 def get_traffic_monitor():
     global _traffic_monitor
     if _traffic_monitor is None:
-        from local_fortress.mcp_server.traffic_control import get_traffic_monitor as _get_tm
+        from .traffic_control import get_traffic_monitor as _get_tm
         _traffic_monitor = _get_tm()
     return _traffic_monitor
 
@@ -161,7 +178,7 @@ _system_monitor = None
 def get_system_monitor():
     global _system_monitor
     if _system_monitor is None:
-        from local_fortress.mcp_server.traffic_control import get_system_monitor as _get_sm
+        from .traffic_control import get_system_monitor as _get_sm
         _system_monitor = _get_sm(DB_PATH)
     return _system_monitor
 
@@ -221,7 +238,7 @@ def audit_code(file_path: str, content: str) -> str:
     Returns:
         JSON string containing {verdict, risk_grade, rationale, failure_modes, requires_approval}
     """
-    from local_fortress.mcp_server.sentinel_engine import SentinelEngine
+    from .sentinel_engine import SentinelEngine
     
     # Check backpressure (Phase 8.5)
     try:
@@ -288,7 +305,7 @@ def audit_claim(text: str) -> str:
     Returns:
         JSON string with verdict and rationale
     """
-    from local_fortress.mcp_server.sentinel_engine import SentinelEngine
+    from .sentinel_engine import SentinelEngine
     
     sentinel = SentinelEngine()
     result = sentinel.audit_claim(text)
@@ -543,6 +560,37 @@ def get_system_status() -> str:
         
         return json.dumps(state)
 
+@mcp.tool()
+def get_telemetry_metrics() -> str:
+    """
+    Get real-time system telemetry (SLIs and resource gauges).
+    
+    Returns:
+        JSON with latency histograms, error rates, and resource usage.
+    """
+    tm = get_telemetry_manager()
+    return json.dumps(tm.get_metrics_snapshot())
+
+@mcp.tool()
+def submit_user_feedback(event_id: str, rating: int, comments: str) -> str:
+    """
+    Submit user feedback for a system event (RLHF mechanism).
+    
+    Args:
+        event_id: The ID of the event (audit/ledger hash) being rated
+        rating: 1-5 star rating
+        comments: Textual feedback
+        
+    Returns:
+        Confirmation string
+    """
+    tm = get_telemetry_manager()
+    try:
+        row_id = tm.submit_feedback(event_id, rating, comments)
+        return f"Feedback recorded (ID: {row_id})"
+    except Exception as e:
+        return f"Error recording feedback: {str(e)}"
+
 # ============================================================================
 # Resources (Read-only data access)
 # ============================================================================
@@ -582,7 +630,7 @@ def register_claim_with_ttl(content: str, volatility_class: str, source_url: str
     Returns:
         JSON with claim_id and expires_at
     """
-    from local_fortress.mcp_server.volatility_manager import VolatilityManager, VolatilityClass
+    from .volatility_manager import VolatilityManager, VolatilityClass
     
     vol_mgr = get_volatility_manager()
     
@@ -784,7 +832,7 @@ def register_source(url: str, tier_override: str = None) -> str:
     Returns:
         JSON with source_id, tier, and SCI score
     """
-    from local_fortress.mcp_server.credibility_manager import ReferenceTier
+    from .credibility_manager import ReferenceTier
     
     cred_mgr = get_credibility_manager()
     
@@ -897,7 +945,7 @@ def update_agent_trust(agent_did: str, outcome_score: float, context: str, ledge
     Returns:
         JSON with old and new scores
     """
-    from local_fortress.mcp_server.trust_engine import TrustContext
+    from .trust_engine import TrustContext
     
     trust_mgr = get_trust_manager()
     
@@ -936,7 +984,7 @@ def apply_trust_penalty(agent_did: str, penalty_type: str, reason: str) -> str:
     Returns:
         JSON with new score and applied penalty amount
     """
-    from local_fortress.mcp_server.trust_engine import MicroPenaltyType
+    from .trust_engine import MicroPenaltyType
     
     trust_mgr = get_trust_manager()
     
@@ -1036,7 +1084,7 @@ def request_diversity_vote(artifact_hash: str, content: str, family: str, verdic
         reason: Justification
         confidence: 0.0 to 1.0
     """
-    from local_fortress.mcp_server.diversity_manager import ModelFamily, Verdict
+    from .diversity_manager import ModelFamily, Verdict
     
     dm = get_diversity_manager()
     
@@ -1078,7 +1126,7 @@ def get_adversarial_prompt(content: str, perspective: str) -> str:
         content: The code/artifact to critique
         perspective: SECURITY_PESSIMIST, PERFORMANCE_SKEPTIC, COMPLIANCE_OFFICER, CHAOS_MONKEY
     """
-    from local_fortress.mcp_server.adversarial_engine import ReviewPerspective
+    from .adversarial_engine import ReviewPerspective
     
     adv = get_adversarius()
     try:

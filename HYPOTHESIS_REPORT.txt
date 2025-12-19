@@ -1,0 +1,3 @@
+Control Latency: 0.63ms
+QoreLogic Latency: 28.03ms
+Quality Delta: +2 bugs caught

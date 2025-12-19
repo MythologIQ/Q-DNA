@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # Base Daemon (Shared across projects or Project A)
+  qorelogic-primary:
+    build: .
+    image: qorelogic-gatekeeper:latest
+    container_name: qorelogic-primary
+    volumes:
+      - ./data/primary:/app/ledger
+    environment:
+      - QORELOGIC_DB_PATH=/app/ledger/qorelogic_soa_ledger.db
+    restart: unless-stopped
+
+  # Workspace B Daemon (Isolated)
+  qorelogic-workspace-b:
+    image: qorelogic-gatekeeper:latest
+    container_name: qorelogic-workspace-b
+    volumes:
+      - ./data/workspace-b:/app/ledger
+    environment:
+      - QORELOGIC_DB_PATH=/app/ledger/qorelogic_soa_ledger.db
+    restart: unless-stopped
+
+  # Workspace C Daemon (Isolated)
+  qorelogic-workspace-c:
+    image: qorelogic-gatekeeper:latest
+    container_name: qorelogic-workspace-c
+    volumes:
+      - ./data/workspace-c:/app/ledger
+    environment:
+      - QORELOGIC_DB_PATH=/app/ledger/qorelogic_soa_ledger.db
+    restart: unless-stopped

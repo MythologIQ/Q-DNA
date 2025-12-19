@@ -1,0 +1,3 @@
+include README.md
+recursive-include mcp_server *
+recursive-include qorelogic_gatekeeper *

@@ -36,7 +36,7 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 sys.path.insert(0, PROJECT_ROOT)
 
 try:
-    from local_fortress.mcp_server.sentinel_engine import SentinelEngine, AuditResult
+    from .sentinel_engine import SentinelEngine, AuditResult
 except ImportError:
     # Fallback for direct execution
     from sentinel_engine import SentinelEngine, AuditResult

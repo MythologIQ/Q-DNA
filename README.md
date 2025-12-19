@@ -1,164 +1,62 @@
 # QoreLogic: The Code DNA Engine
 
-**Version:** 9.0 (Formal Verification Active)  
-**Status:** Phase 9: ML & Formal Verification Active
-**Last Updated:** December 17, 2025
+**Package:** `qorelogic-gatekeeper` (v2.1.0)
+**Status:** Active Research (Phase 15 Complete)
 
 ---
 
-## Development Setup
+## 🚀 Quick Start
 
-### Prerequisites
+**QoreLogic Gatekeeper** is a local governance engine that secures your codebase against hallucinations and insecure patterns.
 
-- Python 3.11+
-- Git
-
-### Installation
-
-1. Clone the repository
-2. Install dependencies: `pip install -r requirements.txt`
-3. **Configure Git Hooks** (Critical for Governance):
-   ```bash
-   git config core.hooksPath scripts
-   chmod +x scripts/pre-commit scripts/commit-msg
-   ```
-
----
-
-## Overview
-
-QoreLogic (Quality DNA Engine) is a **local-first governance layer** for high-assurance AI-assisted code development. It addresses the fundamental unreliability of Large Language Models by implementing a multi-tier verification pipeline grounded in formal methods and probabilistic trust engineering.
-
-### Core Value Proposition
-
-| Problem                    | QoreLogic Solution                   |
-| :------------------------- | :------------------------------- |
-| LLM hallucination (18-50%) | Multi-tier verification pipeline |
-| Cloud dependency           | Sovereign local execution        |
-| Static trust assumptions   | Dynamic reputation with decay    |
-| Binary security            | Probabilistic risk grading       |
-| Audit opacity              | Merkle-chained transparency      |
-| **Validation Drift**       | **Context-Aware Fail Forward**   |
-
----
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        THE SOVEREIGN FORTRESS                    │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   Cloud (Scrivener)  ──────▶  MCP Gateway (Port 8001)           │
-│                                      │                           │
-│                                      ▼                           │
-│                         ┌─────────────────────┐                  │
-│                         │   VERIFICATION      │                  │
-│                         │   ├── Tier 1: Static│                  │
-│                         │   ├── Tier 2: DbC   │                  │
-│                         │   └── Tier 3: FV    │                  │
-│                         └─────────────────────┘                  │
-│                                      │                           │
-│                                      ▼                           │
-│   ┌──────────┐    ┌──────────┐    ┌──────────┐                  │
-│   │ Sentinel │───▶│  Judge   │───▶│  Ledger  │                  │
-│   └──────────┘    └──────────┘    └──────────┘                  │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Key Features
-
-### 🛡️ Verification Pipeline
-
-- **Tier 1:** Static Analysis (Pylint, Flake8, MyPy)
-- **Tier 2:** Design by Contract (`deal` library)
-- **Tier 3:** Formal Verification (PyVeritas, CBMC)
-
-### 📊 Trust Dynamics
-
-- Source Credibility Index (SCI) with dynamic decay
-- Transitive trust with damping (δ=0.5)
-- Lewicki-Bunker trust stages (CBT/KBT/IBT)
-
-### ⚖️ Compliance
-
-- GDPR Article 22 alignment
-- NIST AI RMF integration
-- 90-day vulnerability disclosure policy
-
-### 🔒 Security
-
-- Ed25519 cryptographic signing
-- Merkle-chained audit ledger
-- HILS penalty model (High Inspection/Low Severity)
-
----
-
-## Documentation
-
-| Document                                              | Description                       |
-| :---------------------------------------------------- | :-------------------------------- |
-| [QoreLogic_SPECIFICATION.md](docs/QoreLogic_SPECIFICATION.md) | Complete specification (v2.4)     |
-| [PRD.md](docs/PRD.md)                                 | Product requirements              |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md)               | Technical architecture            |
-| [DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md)       | Roadmap and implementation status |
-| [Research Library](docs/research/INDEX.md)            | Empirical research foundation     |
-
----
-
-## Quick Start
+### 1. Install
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Run the MCP server
-python -m local_fortress.mcp_server.server
-
-# Run tests
-python -m pytest tests/
+pip install qorelogic-gatekeeper
 ```
 
+_(Note: In this pilot repo, use `pip install -e local_fortress`)_
+
+### 2. Auto-Bootstrap (IDE)
+
+If you are using an Agentic Workflow, simply type:
+
+> `/bootstrap_qorelogic`
+
+### 3. Usage
+
+- **Block Insecure Commits:** `qorelogic-check file.py`
+- **Run the Daemon:** `qorelogic-server`
+- **Visualize Trust:** Connect your dashboard using the MCP API.
+
 ---
 
-## Implementation Status
+## 📚 Documentation
 
-| Phase    | Status | Description                               |
-| :------- | :----: | :---------------------------------------- |
-| P0       |   ✅   | Critical Security (Ed25519, key rotation) |
-| P1       |   ✅   | Citation & Fallback (SCI, tiers)          |
-| P2       |   ✅   | Advanced Features (modes, calibration)    |
-| **P8.5** |   ✅   | **Trust Dynamics & Design by Contract**   |
-| **P9**   |   🚧   | **Formal Verification (Z3 Activated)**    |
+The complete manual for developers, integrators, and architects:
+
+👉 **[READ THE DEVELOPER MANUAL](docs/DEVELOPER_MANUAL.md)**
+
+- **Installation & Config**: How to set up Native or Docker environments.
+- **Integration Guide**: API Reference for dashboards like **Project Failsafe**.
+- **Architecture**: Deep dive into the Sovereign Ledger and Trust Models.
 
 ---
 
-## Research Foundation
+## Architecture Overview
 
-QoreLogic is grounded in empirical research:
+QoreLogic operates as a **Sovereign Fortress**:
 
-- **Trust:** EigenTrust, Lewicki-Bunker, RiskMetrics
-- **Verification:** HaluEval, PyVeritas, OWASP Benchmark
-- **Compliance:** GDPR, NIST AI RMF, ISO 42001
-- **Deterrence:** Nagin HILS model
+1.  **Scrivener (Cloud)**: Writes code (Creative).
+2.  **Sentinel (Local)**: Verifies code (Logical).
+3.  **Judge (Local)**: Signs code (Governance).
 
-See the [Research Library](docs/research/INDEX.md) for full citations.
+All trust data is stored locally in an encrypted SQLite Ledger.
 
 ---
 
 ## License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
-
----
-
-## Contributing
-
-QoreLogic is currently in active research phase. Contributions welcome after v1.0 release.
-
----
+Apache License 2.0 - See [LICENSE](LICENSE).
 
 **MythologIQ Studio** | _Building trustworthy AI systems_
