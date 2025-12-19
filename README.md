@@ -1,4 +1,4 @@
-# QoreLogic: The Code DNA Engine
+# QoreLogic: The Autopoietic Code Governance Engine
 
 **Package:** `qorelogic-gatekeeper` (v2.1.0)
 **Status:** Active Research (Phase 15 Complete)
