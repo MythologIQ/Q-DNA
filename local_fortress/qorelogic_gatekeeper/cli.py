@@ -10,10 +10,37 @@ from pathlib import Path
 
 def main():
     parser = argparse.ArgumentParser(description="QoreLogic Gatekeeper - Active Hook")
-    parser.add_argument("file", help="Path to the file to audit")
+    parser.add_argument("file", nargs="?", help="Path to the file to audit (Optional if running dashboard)")
     parser.add_argument("--monitor", action="store_true", help="Run in silent monitoring mode (Audit Only, do not block)")
+    parser.add_argument("--dashboard", action="store_true", help="Launch the QoreLogic Dashboard Server")
     args = parser.parse_args()
     
+    if args.dashboard:
+        print("🚀 Starting QoreLogic Dashboard on http://0.0.0.0:8000")
+        try:
+            # Import backend main app
+            # Assuming it's installed in the python path under 'dashboard.backend' or similar
+            # But since we copied it to /app/dashboard/backend and set PYTHONPATH...
+            # We might need to adjust sys.path if not installed as a package.
+            
+            # For the Docker build, we copied dashboard/backend to /app/dashboard/backend
+            # So let's try to add that to path if needed.
+            sys.path.append("/app/dashboard/backend")
+            import uvicorn
+            # We import the 'app' object from main.py
+            # Since main.py is in /app/dashboard/backend/main.py
+            from main import app as dashboard_app
+            
+            uvicorn.run(dashboard_app, host="0.0.0.0", port=8000)
+            sys.exit(0)
+        except Exception as e:
+            print(f"Error launching dashboard: {e}")
+            sys.exit(1)
+
+    if not args.file:
+        parser.print_help()
+        sys.exit(1)
+
     file_path = Path(args.file)
     if not file_path.exists():
         print(f"Error: File not found: {file_path}")

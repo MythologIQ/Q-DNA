@@ -1,31 +1,42 @@
 # QoreLogic: The Autopoietic Code Governance Engine
 
-**Package:** `qorelogic-gatekeeper` (v2.1.0)
-**Status:** Production Ready (Phase 17 Complete)
+**Version:** 2.1.0 ("Sterile Fortress")
+**Status:** Production Ready
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Zero-Setup)
 
-**QoreLogic Gatekeeper** is a local governance engine that secures your codebase against hallucinations and insecure patterns.
+**QoreLogic Gatekeeper** is now a fully isolated, sovereign appliance. You do not need to install Python or dependencies on your host machine.
 
-### 1. Install
+### 1. Launch the System
 
-```bash
-pip install qorelogic-gatekeeper
+Navigate to the `launcher` directory and double-click:
+
+> **`Launch_QoreLogic.bat`**
+
+This will open the **Command Center**, where you can:
+
+- **Initialize** the sterile Docker container (auto-builds if missing).
+- **Configure** your host environment variables.
+- **Manage** isolated workspaces.
+
+### 2. CLI Usage
+
+Once initialized, you can use the generated wrapper in your project:
+
+```powershell
+.\qorelogic-check.bat --monitor src/my_code.py
 ```
 
-### 2. Auto-Bootstrap (IDE)
+---
 
-If you are using an Agentic Workflow, simply type:
+## 🛡️ Features
 
-> `/bootstrap_qorelogic`
-
-### 3. Usage
-
-- **Block Insecure Commits:** `qorelogic-check file.py`
-- **Run the Daemon:** `qorelogic-server`
-- **Visualize Trust:** Connect your dashboard using the MCP API.
+- **Sterile Isolation**: Runs entirely in Docker. No local `pip` pollution.
+- **Sovereign Ledger**: All trust data is stored locally in `~/.qorelogic/ledger`.
+- **Real-Time Dashboard**: Built-in visual interface for telemetry and auditing.
+- **Multi-Workspace**: Support for isolated environments (Standard vs. Strict).
 
 ---
 
@@ -35,21 +46,9 @@ The complete manual for developers, integrators, and architects:
 
 👉 **[READ THE DEVELOPER MANUAL](docs/DEVELOPER_MANUAL.md)**
 
-- **Installation & Config**: How to set up Native or Docker environments.
-- **Integration Guide**: API Reference for dashboards like **Project Failsafe**.
 - **Architecture**: Deep dive into the Sovereign Ledger and Trust Models.
-
----
-
-## Architecture Overview
-
-QoreLogic operates as a **Sovereign Fortress**:
-
-1.  **Scrivener (Cloud)**: Writes code (Creative).
-2.  **Sentinel (Local)**: Verifies code (Logical).
-3.  **Judge (Local)**: Signs code (Governance).
-
-All trust data is stored locally in an encrypted SQLite Ledger.
+- **Integration**: API Reference for custom dashboards.
+- **Troubleshooting**: Managing L3 approvals and system modes.
 
 ---
 

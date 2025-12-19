@@ -1,28 +1,53 @@
-# QoreLogic Gatekeeper - External Distribution Dockerfile
-# Usage:
-# 1. Copy this file and the .whl file from dist/ to your build context.
-# 2. docker build -t qorelogic-gatekeeper:latest .
+# Stage 1: Builder (Standard Slim Image)
+FROM python:3.11-slim as builder
 
-FROM python:3.11-slim
+WORKDIR /build
+
+# Install dependencies into a temporary location
+COPY qorelogic_gatekeeper-*.whl .
+RUN pip install --target=/build/site-packages qorelogic_gatekeeper-*.whl
+
+# Stage 1.5: Dashboard Builder
+FROM node:20-slim as dashboard-builder
+WORKDIR /app/frontend
+# Copy frontend package files
+COPY dashboard/frontend/package*.json ./
+RUN npm install
+# Copy frontend source
+COPY dashboard/frontend/ ./
+# Build (output to /app/frontend/dist)
+RUN npm run build
+
+# Stage 2: Runtime (Docker Hardened Image)
+FROM dhi.io/python:3.11
 
 WORKDIR /app
 
-# Create user
-RUN groupadd -r qorelogic && useradd -r -g qorelogic qorelogic
+# Copy installed packages from builder
+# Python generic pathing, adjust if DHI uses specific paths, but PYTHONPATH env var usually handles this
+ENV PYTHONPATH=/app/site-packages
+COPY --from=builder /build/site-packages /app/site-packages
 
-# Copy and install the wheel
-# Expects the wheel to be in the build context
-COPY dist/qorelogic_gatekeeper-*.whl /tmp/
-RUN pip install /tmp/qorelogic_gatekeeper-*.whl && rm /tmp/*.whl
+# Copy Dashboard Artifacts
+COPY --from=dashboard-builder /app/frontend/dist /app/dashboard/dist
+COPY dashboard/backend /app/dashboard/backend
 
-# Setup directories
-RUN mkdir -p /app/ledger && chown -R qorelogic:qorelogic /app
+# Install Dashboard Dependencies
+# We install these into the site-packages as well, or a separate location if needed
+# Since we are in the final image, we can just pip install if pip is available.
+# If DHI has no pip, we need to do this in the builder stage. 
+# ASSUMPTION: DHI has pip or we reuse builder. Let's reuse builder for safety.
+# RETROACTIVE FIX: We need to install dashboard reqs in the builder stage to be safe.
+COPY dashboard/backend/requirements.txt /tmp/dash_requirements.txt
+RUN pip install --target=/app/site-packages -r /tmp/dash_requirements.txt
 
-USER qorelogic
+# Create non-privileged user if DHI doesn't provide one, or use what's there. 
+# Distroless often runs as non-root by default or root (dangerous). 
+# We'll stick to simple execution for now as DHI usually strips shell tools.
 
 # Default Configuration
 ENV QORELOGIC_DB_PATH=/app/ledger/qorelogic_soa_ledger.db
 
-# Default Entrypoint (Daemon)
-# Override with ["qorelogic-check", ...] for CLI Monitor
-ENTRYPOINT ["qorelogic-server"]
+# Default Entrypoint (Interpreter)
+# Wrappers pass "-m qorelogic_gatekeeper.cli" or "-m mcp_server"
+ENTRYPOINT ["python"]

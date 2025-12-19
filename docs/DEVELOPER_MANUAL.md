@@ -1,138 +1,122 @@
 # QoreLogic Developer Manual
 
-**Version:** 2.1.0
+**Version:** 2.1.0 ("Sterile Fortress")
 **Scope:** Installation, Configuration, Integration, and Architecture.
 
 ---
 
 ## 1. Quick Start (Get Running)
 
-### 1.1. Installation
+QoreLogic operates as a **Sterile Appliance**. It does not install dependencies on your host machine.
 
-QoreLogic is available as a standard Python package.
+### 1.1. The One-Click Launcher
 
-### 1.1. Native App (Recommended)
+1.  Navigate to the `launcher` directory.
+2.  Run **`Launch_QoreLogic.bat`** (Windows).
+3.  The **Command Center** will open in your browser.
 
-The cleanest way to use QoreLogic is as a Docker Sidecar.
+**From the Command Center:**
 
-1.  **Build the Engine:**
+- **Initialize System:** Builds the `qorelogic:latest` Docker image.
+- **Active Workspace:** Selects the active project context (Default: Local Fortress).
+- **Environment:** Configures global encryption keys and paths.
 
-    ```powershell
-    .\bin\qorelogic.ps1 build
-    ```
+### 1.2. The Dashboard
 
-2.  **Attach to Workspace:**
-    Navigate to your project root and run:
+Once initialized, the **QoreLogic Dashboard** is available at:
 
-    ```powershell
-    ..\path\to\Q-DNA\bin\qorelogic.ps1 attach my-project
-    ```
+> `http://localhost:8000`
 
-    - This starts a dedicated daemon (`qorelogic-my-project`).
-    - Creates `.\qorelogic-check.bat` in your folder.
+It provides:
 
-3.  **Usage:**
-    ```powershell
-    .\qorelogic-check.bat --monitor src/main.py
-    ```
-
-### 1.2. Automated Setup (IDE / Agent)
-
-If you are in an Agentic IDE, use the slash command to auto-detect and install:
-
-> `/bootstrap_qorelogic`
+- **Telemetry**: Real-time system health and L3 approval queues.
+- **Ledger**: Immutable audit log of all code verifications.
+- **Workspace Manager**: UI for creating isolated project environments.
 
 ---
 
-## 2. Tools & Usage
+## 2. CLI Usage
 
-The package provides two primary tools: **The Hook** (Active) and **The Daemon** (Passive).
+After initialization, a wrapper script is generated in your project root: `qorelogic-check.bat`.
 
-### 2.1. The Hook (`qorelogic-check`)
+### 2.1. Auditing Code
 
-This CLI tool audits code against the QoreLogic Trust System. It returns an Exit Code of `1` on failure, making it ideal for CI/CD.
+To audit a file against the active workspace's rules:
 
-**Manual Run:**
-
-```bash
-qorelogic-check path/to/file.py
+```powershell
+.\qorelogic-check.bat src/main.py
 ```
 
-**Git Pre-Commit Hook:**
-Add this to `.git/hooks/pre-commit` to block insecure code locally:
+- **Exit Code 0**: PASS (or Monitor Mode)
+- **Exit Code 1**: FAIL (Block Commit)
 
-```bash
-#!/bin/sh
-git diff --cached --name-only --diff-filter=ACM | grep '\.py$' | xargs -r qorelogic-check
+### 2.2. Monitor Mode (Non-Blocking)
+
+Run silently without blocking (useful for initial baselining):
+
+```powershell
+.\qorelogic-check.bat --monitor src/main.py
 ```
 
-### 2.2. The Daemon (`qorelogic-server`)
+### 2.3. Launching the Dashboard manually
 
-The Daemon runs in the background, maintaining the Sovereign Ledger, Trust Scores, and Context.
+If the dashboard is not running:
 
-**Run in Foreground:**
-
-```bash
-qorelogic-server
-```
-
-**Run in Docker (Recommended for Isolation):**
-Use our [Docker Compose Template](docker-compose.yml) to run isolated daemons for different workspaces.
-
-```bash
-docker-compose up -d
+```powershell
+.\qorelogic-check.bat --dashboard
 ```
 
 ---
 
-## 3. Integration Guide (for Tool Builders)
+## 3. Architecture: The Sterile Fortress
 
-Building a dashboard like **Project Failsafe**? The Daemon exposes an MCP (Model Context Protocol) API.
+QoreLogic uses a "Sidecar" architecture to maintain sovereignty.
 
-### 3.1. Connection Architecture
+1.  **Host**: Your machine. Holds only the source code and the `qorelogic-check.bat` wrapper.
+2.  **Container**: `qorelogic:latest`. Contains the Python environment, Sentinel Engine, and API.
+3.  **Volume**: `~/.qorelogic/ledger`. Persists the Trust Ledger and configurations across container restarts.
 
-The Daemon listens on `stdio` by default.
+### 3.1. Multi-Workspace Isolation
 
-- **Client Libs:** `mcp` (Python), `@modelcontextprotocol/sdk` (Node.js)
+Each project can have its own "Workspace," which provides:
 
-### 3.2. API Reference
-
-#### System Health (For Status Boards)
-
-**Tool:** `get_system_status()`
-Returns current operational mode (NORMAL, SURGE, SAFE) and pending approval counts.
-
-#### Verification Telemetry (For Graphs)
-
-**Tool:** `get_telemetry_metrics()`
-Returns real-time stats: Request Count, Latency, Error Rate.
-
-#### Ledger Activity (For Feeds)
-
-**Resource:** `ledger://recent`
-Returns a JSON list of the most recent governance events (Audits, Penalties, Approvals).
+- **Isolated Database**: `project-id.db`
+- **Isolated Context**: Separate trust scores and baselines.
+- **Environment Template**:
+  - **Standard**: Network access allowed, L2 Audit.
+  - **Strict**: Network disabled (air-gapped), L3 Audit required.
 
 ---
 
-## 4. Configuration
+## 4. Integration Guide (API)
 
-The system is configured via Environment Variables.
+The Dashboard Backend exposes an API for custom integrations.
 
-| Variable            | Description           | Default                            |
-| :------------------ | :-------------------- | :--------------------------------- |
-| `QORELOGIC_DB_PATH` | Path to SQLite Ledger | `./ledger/qorelogic_soa_ledger.db` |
-| `QORELOGIC_MODE`    | Force start mode      | `NORMAL`                           |
+**Base URL:** `http://localhost:8000/api`
+
+### 4.1. Endpoints
+
+| Endpoint      | Method | Description                      |
+| :------------ | :----- | :------------------------------- |
+| `/status`     | GET    | System mode and queue counts.    |
+| `/ledger`     | GET    | Recent audit events.             |
+| `/workspaces` | GET    | List registered workspaces.      |
+| `/workspaces` | POST   | Create a new isolated workspace. |
 
 ---
 
 ## 5. Troubleshooting
 
-**"Module Not Found"**
+**"Docker Not Found"**
 
-- Ensure you ran `pip install` in the active environment.
-- If using Docker, ensure the volume mount maps to `/app/ledger`.
+- Ensure Docker Desktop is running.
+- The Launcher checks for the `docker` command on startup.
 
-**"Commit Blocked"**
+**"Connection Refused" (Dashboard)**
 
-- Read the error message.
-- If `L3_REQUIRED`, you must request human approval via the `request_overseer_approval` tool.
+- The container might be stopped. Run `.\qorelogic-check.bat --dashboard` to restart it.
+
+**"L3 Approval Required"**
+
+- This means the Sentinel Engine detected a high-risk pattern.
+- Go to the **Dashboard** > **Overview** to view pending approvals (Feature coming in v2.2).
