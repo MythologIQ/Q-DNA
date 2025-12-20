@@ -6,18 +6,19 @@ $LauncherDir = $PSScriptRoot
 $ProjectRoot = Join-Path $LauncherDir ".."
 $HtmlPath = Join-Path $LauncherDir "Launcher.html"
 
-$ErrorActionPreference = "SilentlyContinue"
-
-# Configuration
-$Port = 5500
-$LauncherDir = $PSScriptRoot
-$ProjectRoot = Join-Path $LauncherDir ".."
-$HtmlPath = Join-Path $LauncherDir "Launcher.html"
-
 # Create TCP Listener (No Admin Rights Needed)
 $Address = [System.Net.IPAddress]::Loopback
-$Listener = [System.Net.Sockets.TcpListener]::new($Address, $Port)
-$Listener.Start()
+
+try {
+    $Listener = [System.Net.Sockets.TcpListener]::new($Address, $Port)
+    $Listener.Start()
+} catch {
+    Write-Error "Failed to start listener on port $Port. It might be in use."
+    Write-Error $_
+    exit 1
+}
+
+Write-Host "🚀 QoreLogic Launcher listening on http://localhost:$Port/" -ForegroundColor Cyan
 
 Write-Host "🚀 QoreLogic Launcher listening on http://localhost:$Port/" -ForegroundColor Cyan
 
@@ -40,8 +41,8 @@ try {
             $Url = $Parts[1]
             
             # Response Headers
-            # We must allow CORS for the file:// based Launcher.html
-            $BaseHeaders = "Access-Control-Allow-Origin: *`r`nAccess-Control-Allow-Methods: POST, GET, OPTIONS`r`nAccess-Control-Allow-Headers: Content-Type`r`n"
+            # We must allow CORS for the file:// based Launcher.html including PNA (Private Network Access)
+            $BaseHeaders = "Access-Control-Allow-Origin: *`r`nAccess-Control-Allow-Methods: POST, GET, OPTIONS`r`nAccess-Control-Allow-Headers: Content-Type`r`nAccess-Control-Allow-Private-Network: true`r`nAccess-Control-Max-Age: 86400`r`n"
             $Header = "HTTP/1.1 200 OK`r`n${BaseHeaders}Content-Type: text/html; charset=utf-8`r`nConnection: close`r`n`r`n"
             $Body = ""
             
