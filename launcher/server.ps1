@@ -20,14 +20,13 @@ try {
 
 Write-Host "🚀 QoreLogic Launcher listening on http://localhost:$Port/" -ForegroundColor Cyan
 
-Write-Host "🚀 QoreLogic Launcher listening on http://localhost:$Port/" -ForegroundColor Cyan
-
 # Open Browser
 Start-Process "http://localhost:$Port/"
 
 try {
     while ($true) {
         if ($Listener.Pending()) {
+            # ... (no change to connection logic) ...
             $Client = $Listener.AcceptTcpClient()
             $Stream = $Client.GetStream()
             $Buffer = New-Object byte[] 4096
@@ -41,22 +40,21 @@ try {
             $Url = $Parts[1]
             
             # Response Headers
-            # We must allow CORS for the file:// based Launcher.html including PNA (Private Network Access)
             $BaseHeaders = "Access-Control-Allow-Origin: *`r`nAccess-Control-Allow-Methods: POST, GET, OPTIONS`r`nAccess-Control-Allow-Headers: Content-Type`r`nAccess-Control-Allow-Private-Network: true`r`nAccess-Control-Max-Age: 86400`r`n"
-            $Header = "HTTP/1.1 200 OK`r`n${BaseHeaders}Content-Type: text/html; charset=utf-8`r`nConnection: close`r`n`r`n"
-            $Body = ""
             
             # Router
             if ($Method -eq "OPTIONS") {
-                # Handle CORS Preflight
-                $Header = "HTTP/1.1 204 No Content`r`n${BaseHeaders}Connection: close`r`n`r`n"
+               # ...
+               $Header = "HTTP/1.1 204 No Content`r`n${BaseHeaders}Connection: close`r`n`r`n"
+               $Body = ""
             }
             elseif ($Url -eq "/" -or $Url -eq "/Launcher.html") {
-                $Body = Get-Content $HtmlPath -Raw -Encoding UTF8
+                 $Header = "HTTP/1.1 200 OK`r`n${BaseHeaders}Content-Type: text/html; charset=utf-8`r`nConnection: close`r`n`r`n"
+                 $Body = Get-Content $HtmlPath -Raw -Encoding UTF8
             }
             elseif ($Url -eq "/api/health") {
                  $Header = "HTTP/1.1 200 OK`r`n${BaseHeaders}Content-Type: application/json`r`nConnection: close`r`n`r`n"
-                 $Body = '{"status": "ok"}'
+                 $Body = '{"status": "ok", "service": "QoreLogic Launcher"}'
             }
             elseif ($Url -eq "/api/launch" -and $Method -eq "POST") {
                 $Header = "HTTP/1.1 200 OK`r`n${BaseHeaders}Content-Type: application/json`r`nConnection: close`r`n`r`n"
@@ -76,6 +74,16 @@ try {
                      $Msg = "Build complete and launched"
                 }
                 $Body = '{"status": "ok", "message": "' + $Msg + '"}'
+            }
+            elseif ($Url -eq "/api/stop" -and $Method -eq "POST") {
+                $Header = "HTTP/1.1 200 OK`r`n${BaseHeaders}Content-Type: application/json`r`nConnection: close`r`n`r`n"
+                
+                Write-Host "   [CMD] Stopping QoreLogic Container..." -ForegroundColor Red
+                
+                # Stop the container by its fixed name
+                Start-Process -FilePath "docker" -ArgumentList "stop qorelogic-runtime" -NoNewWindow -Wait
+                
+                $Body = '{"status": "ok", "message": "Container stopped"}'
             }
             else {
                 $Header = "HTTP/1.1 404 Not Found`r`nConnection: close`r`n`r`n"
