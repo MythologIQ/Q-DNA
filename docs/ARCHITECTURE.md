@@ -1,9 +1,9 @@
 # QoreLogic Architecture Specification (Sovereign Fortress)
 
-**Version:** 2.1
-**Last Updated:** December 20, 2025
+**Version:** 9.0
+**Last Updated:** December 22, 2025
 **Scope:** Hardware, Software, Network, and Trust topology for QoreLogic governance
-**Phase:** 9.0 (Formal Verification Active)
+**Phase:** 9.0 (Z3 Integration Complete)
 **Research Foundation:** See [Research Library](./research/INDEX.md)
 
 ---
@@ -345,8 +345,9 @@ See [Research Library](./research/INDEX.md) for full citations.
 
 ## Changelog
 
-| Version | Date           | Changes                                                         |
-| :------ | :------------- | :-------------------------------------------------------------- |
-| 1.0     | 2025-12        | Initial topology                                                |
-| **2.0** | **2025-12-17** | **Full research integration, trust engine, verification tiers** |
-| **2.1** | **2025-12-20** | **Phase 9.0 Z3 integration, formal verification status update** |
+| Version | Date           | Changes                                                                     |
+| :------ | :------------- | :-------------------------------------------------------------------------- |
+| 1.0     | 2025-12        | Initial topology                                                            |
+| **2.0** | **2025-12-17** | **Full research integration, trust engine, verification tiers**             |
+| **2.1** | **2025-12-20** | **Phase 9.0 Z3 integration, formal verification status update**             |
+| **9.0** | **2025-12-22** | **Version alignment with specification, documentation consistency updates** |

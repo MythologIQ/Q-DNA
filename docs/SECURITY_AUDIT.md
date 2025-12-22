@@ -1,4 +1,4 @@
-# Security Audit Report: QoreLogic Cryptographic Implementation
+  # Security Audit Report: QoreLogic Cryptographic Implementation
 
 **Auditor:** Manus 1.6 Lite
 **Date:** December 20, 2025

@@ -316,9 +316,9 @@ class EvolutionaryBootstrapper:
             
             cursor.execute("""
                 INSERT INTO soa_ledger 
-                (timestamp, agent_did, event_type, risk_grade, payload, entry_hash, prev_hash, signature)
-                VALUES (datetime('now'), ?, ?, ?, ?, ?, ?, ?)
-            """, (did, "GENERATION_COMPLETE", "L2", payload_str, entry_hash, prev_hash, signature))
+                (timestamp, agent_did, event_type, risk_grade, payload, entry_hash, prev_hash, signature, workspace_id)
+                VALUES (datetime('now'), ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (did, "GENERATION_COMPLETE", "L2", payload_str, entry_hash, prev_hash, signature, "default"))
             conn.commit()
     
     def recall_variant(self, genome_id: int, reason: str) -> Optional[Dict]:
@@ -372,9 +372,9 @@ class EvolutionaryBootstrapper:
             
             cursor.execute("""
                 INSERT INTO soa_ledger 
-                (timestamp, agent_did, event_type, risk_grade, payload, entry_hash, prev_hash, signature)
-                VALUES (datetime('now'), ?, ?, ?, ?, ?, ?, ?)
-            """, (did, "SHADOW_RECALL", "L2", payload_str, entry_hash, prev_hash, f"sig_recall_{entry_hash[:8]}"))
+                (timestamp, agent_did, event_type, risk_grade, payload, entry_hash, prev_hash, signature, workspace_id)
+                VALUES (datetime('now'), ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (did, "SHADOW_RECALL", "L2", payload_str, entry_hash, prev_hash, f"sig_recall_{entry_hash[:8]}", "default"))
             
             conn.commit()
             

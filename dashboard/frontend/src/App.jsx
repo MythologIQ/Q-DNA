@@ -1,20 +1,31 @@
 import { useState, useEffect } from 'react';
 import './index.css';
+import AgentsView from './AgentsView';
+import SystemControls from './SystemControls';
+import { ContainerAPI } from './api';
 
 const API_BASE = "http://localhost:8000/api";
+
+import TrustMonitor from './TrustMonitor';
+import IdentityView from './IdentityView';
+import LedgerView from './LedgerView';
 
 const Icons = {
   Dashboard: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
   List: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
   Folder: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>,
   Settings: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
-  Plus: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  Plus: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  Brain: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-1.54"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-1.54"/></svg>,
+  Shield: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  Activity: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
 };
 
 function App() {
   const [activeTab, setActiveTab] = useState('overview');
   const [status, setStatus] = useState(null);
   const [ledger, setLedger] = useState([]);
+  const [connectionStatus, setConnectionStatus] = useState({ host: false, container: false });
 
   const fetchData = async () => {
     try {
@@ -59,8 +70,11 @@ function App() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <NavItem icon={<Icons.Dashboard/>} label="Overview" active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} />
-          <NavItem icon={<Icons.List/>} label="Ledger" active={activeTab === 'ledger'} onClick={() => setActiveTab('ledger')} />
+          <NavItem icon={<Icons.Activity/>} label="Deep Trust Analysis" active={activeTab === 'trust'} onClick={() => setActiveTab('trust')} />
+          <NavItem icon={<Icons.Shield/>} label="Identity Fortress" active={activeTab === 'identity'} onClick={() => setActiveTab('identity')} />
+          <NavItem icon={<Icons.List/>} label="Ledger Explorer" active={activeTab === 'ledger'} onClick={() => setActiveTab('ledger')} />
           <NavItem icon={<Icons.Folder/>} label="Workspace" active={activeTab === 'workspace'} onClick={() => setActiveTab('workspace')} />
+          <NavItem icon={<Icons.Brain/>} label="Agents" active={activeTab === 'agents'} onClick={() => setActiveTab('agents')} />
           <NavItem icon={<Icons.Settings/>} label="Environment" active={activeTab === 'environment'} onClick={() => setActiveTab('environment')} />
           <NavItem icon={<Icons.Plus/>} label="New Workspace" active={activeTab === 'new-workspace'} onClick={() => setActiveTab('new-workspace')} />
         </div>
@@ -72,7 +86,7 @@ function App() {
               <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: status?.current_mode === 'NORMAL' ? 'var(--success)' : 'var(--warning)', boxShadow: `0 0 10px ${status?.current_mode === 'NORMAL' ? 'var(--success)' : 'var(--warning)'}` }}></div>
               <span style={{ fontWeight: 500 }}>{status?.current_mode || 'OFFLINE'}</span>
             </div>
-            <div style={{ color: 'var(--text-secondary)' }}>v2.1.0-alpha</div>
+            <div style={{ color: 'var(--text-secondary)' }}>v2.2.0-beta</div>
           </div>
         </div>
       </nav>
@@ -83,15 +97,21 @@ function App() {
           <div>
             <h1 style={{ fontSize: '28px', color: 'var(--text-primary)', marginBottom: '8px' }}>
               {activeTab === 'new-workspace' ? 'Initialize Workspace' : 
-               activeTab === 'environment' ? 'System Environment' : 
+               activeTab === 'environment' ? 'System Environment' :
+               activeTab === 'trust' ? 'Trust Dynamics Engine' :
+               activeTab === 'identity' ? 'Identity Fortress' :
+               activeTab === 'ledger' ? 'Ledger Explorer' :
                activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
             </h1>
             <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
               {activeTab === 'overview' && 'Real-time telemetry and system health.'}
+              {activeTab === 'trust' && 'Behavioral economics and reputation metrics.'}
+              {activeTab === 'identity' && 'Cryptographic key management (Argon2id).'}
               {activeTab === 'ledger' && 'Immutable audit trail of all agent interactions.'}
               {activeTab === 'workspace' && 'Manage files and security context.'}
+              {activeTab === 'agents' && 'Configure LLM backends and agent personas.'}
               {activeTab === 'environment' && 'Configure global QoreLogic variables.'}
-              {activeTab === 'new-workspace' && 'Bootstrap a new isolated project environment.'}
+              {activeTab === 'new-workspace' && 'Register a new isolated project environment.'}
             </div>
           </div>
           
@@ -102,9 +122,14 @@ function App() {
           </div>
         </header>
 
+        <SystemControls onStatusChange={setConnectionStatus} />
+
         {activeTab === 'overview' && <Overview status={status} ledger={ledger} />}
-        {activeTab === 'ledger' && <LedgerView ledger={ledger} />}
+        {activeTab === 'trust' && <TrustMonitor />}
+        {activeTab === 'identity' && <IdentityView />}
+        {activeTab === 'ledger' && <LedgerView />}
         {activeTab === 'workspace' && <WorkspaceView />}
+        {activeTab === 'agents' && <AgentsView />}
         {activeTab === 'environment' && <EnvironmentView />}
         {activeTab === 'new-workspace' && <NewWorkspaceView />}
       </main>

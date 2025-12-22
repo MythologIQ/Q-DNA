@@ -776,8 +776,11 @@
                     setInterval(updateStats, 2000);
                     updateStats();
                     
-                    // Don't auto-open dashboard tab, let user decide
-                    // window.open("http://localhost:8000", "_blank");
+                    // Auto-redirect to Dashboard after brief delay
+                    log("Redirecting to Dashboard in 2 seconds...");
+                    setTimeout(() => {
+                        window.location.href = "http://localhost:8000";
+                    }, 2000);
                 }
             } catch (e) {
                 if (attempts % 5 === 0) log("...waiting for container (" + attempts + "s)");

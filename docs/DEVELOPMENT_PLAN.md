@@ -1,9 +1,9 @@
 # QoreLogic Development Roadmap
 
-**Version:** 4.0
+**Version:** 9.0
 **Goal:** Establish the "Sovereign Fortress" with empirically validated governance
-**Last Updated:** December 18, 2025
-**Specification:** v2.4 (Fully Integrated)
+**Last Updated:** December 22, 2025
+**Specification:** v9.0 (Z3 Integration Active)
 **Repository:** https://github.com/MythologIQ/QoreLogic
 **Research Foundation:** See [Research Library](./research/INDEX.md)
 
@@ -371,31 +371,36 @@ All Phase 9 ML-dependent features implemented with Z3 integration active.
 
 Addresses remaining implementation gaps for full production readiness.
 
-| ID   | Task                  | Priority | Spec Section | Est. Effort | Status                                                    | Description |
-| :--- | :-------------------- | :------: | :----------- | :---------: | :-------------------------------------------------------- | ----------- |
-| 10.1 | Identity Fortress     |  **P0**  | §10.2        |     ✅      | Ed25519 with automatic rotation implemented               |
-| 10.2 | Penalty Wiring        |  **P1**  | §9.1         |     ✅      | `calculate_violation_penalty()` connected to TrustManager |
-| 10.3 | Trust Conservation    |  **P1**  | §5.3.5       |     ✅      | L1-norm normalization with anchor damping active          |
-| 10.4 | Stage Persistence     |  **P1**  | §5.3.6       |     ✅      | Lewicki-Bunker stages wired to DB                         |
-| 10.5 | PyVeritas Integration |  **P2**  | §3.3.3       |     📋      | Python→C transpiler for full CBMC support                 |
-| 10.6 | Advanced ML Features  |  **P2**  | §7.2         |     ✅      | Semantic drift, diversity quorum active                   |
+| ID    | Task                      | Priority | Spec Section | Est. Effort | Status                                                    | Description |
+| :---- | :------------------------ | :------: | :----------- | :---------: | :-------------------------------------------------------- | ----------- |
+| 10.1  | Identity Fortress         |  **P0**  | §10.2        |     ✅      | Ed25519 with automatic rotation implemented               |
+| 10.2  | Penalty Wiring            |  **P1**  | §9.1         |     ✅      | `calculate_violation_penalty()` connected to TrustManager |
+| 10.3  | Trust Conservation        |  **P1**  | §5.3.5       |     ✅      | L1-norm normalization with anchor damping active          |
+| 10.4  | Stage Persistence         |  **P1**  | §5.3.6       |     ✅      | Lewicki-Bunker stages wired to DB                         |
+| 10.5  | PyVeritas Integration     |  **P2**  | §3.3.3       |     ✅      | Full/Lite/Disabled modes with LLM fallback                |
+| 10.6  | Advanced ML Features      |  **P2**  | §7.2         |     ✅      | Semantic drift, diversity quorum active                   |
+| 10.7  | Workspace Isolation       |  **P0**  | Multi-tenant |     ✅      | All ledger INSERTs now include workspace_id column        |
+| 10.8  | Agent Config Loading      |  **P0**  | Dashboard    |     ✅      | `agents.json` wired to SentinelEngine via agent_config.py |
+| 10.9  | Loss Aversion Calibration |  **P2**  | §9.1         |     ✅      | LOSS_AVERSION_LAMBDA=2.0 applied to micro-penalties       |
+| 10.10 | Argon2id Key Derivation   |  **P2**  | §7.2         |     ✅      | GPU-resistant KDF with PBKDF2 backward compatibility      |
 
-**Phase 10 Total:** ~6 hours remaining
+**Phase 10 Total:** ✅ COMPLETE
 
 ---
 
 ## Phase 11: Production Hardening ✅ INITIATED
 
-| Item                    |   Status    | Description                              | Est. Effort |
-| :---------------------- | :---------: | :--------------------------------------- | :---------- |
-| Repository Creation     | ✅ **Done** | https://github.com/MythologIQ/QoreLogic  | -           |
-| README + LICENSE        | ✅ **Done** | Apache 2.0                               | -           |
-| CI/CD Pipeline          |     📋      | GitHub Actions                           | 4h          |
-| Docker Containerization |     📋      | Multi-stage build, security hardened     | 6h          |
-| Documentation Site      |     📋      | MkDocs/Docusaurus                        | 6h          |
-| Pilot Deployment        |     📋      | Internal dogfooding                      | 8h          |
-| Benchmark Validation    |     📋      | Trap dataset execution                   | 8h          |
-| Persistent Daemon       |     📋      | Local background service (`qorelogic-d`) | 6h          |
+| Item                     |   Status    | Description                              | Est. Effort |
+| :----------------------- | :---------: | :--------------------------------------- | :---------- |
+| Repository Creation      | ✅ **Done** | https://github.com/MythologIQ/QoreLogic  | -           |
+| README + LICENSE         | ✅ **Done** | Apache 2.0                               | -           |
+| Dashboard v2.2 Expansion | ✅ **Done** | Trust, Identity, Ledger, & Config Views  | -           |
+| CI/CD Pipeline           |     📋      | GitHub Actions                           | 4h          |
+| Docker Containerization  |     📋      | Multi-stage build, security hardened     | 6h          |
+| Documentation Site       |     📋      | MkDocs/Docusaurus                        | 6h          |
+| Pilot Deployment         |     📋      | Internal dogfooding                      | 8h          |
+| Benchmark Validation     |     📋      | Trap dataset execution                   | 8h          |
+| Persistent Daemon        |     📋      | Local background service (`qorelogic-d`) | 6h          |
 
 > **Decision (2025-12-18):** Full backend containerization approved for dependency isolation (Z3, CBMC, etc.) and security sandboxing per §2.1 Sovereign Fortress principle.
 
@@ -520,3 +525,4 @@ See detailed task breakdown in Track A, B, C above.
 | 3.0     | 2025-12-17     | Complete task breakdown with dependency graph, parallel tracks, effort estimates, and sprint plan                                               |
 | **4.0** | **2025-12-18** | **Research library validation complete. Created Phase 10 (Implementation Hardening) for P0/P1 gaps. Shifted Production Hardening to Phase 11.** |
 | **4.1** | **2025-12-20** | **Phase 9.0 Complete: Z3 integration active, trust dynamics operational, identity fortress hardened. Updated Phase 10 status.**                 |
+| **9.0** | **2025-12-22** | **Version alignment with specification, documentation consistency updates**                                                                     |

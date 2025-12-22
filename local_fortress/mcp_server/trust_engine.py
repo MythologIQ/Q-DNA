@@ -52,6 +52,11 @@ PROBATION_VERIFICATIONS = 5
 PROBATION_DURATION = 30 * 24 * 3600
 PROBATION_FLOOR_SCI = 0.35 # Normalized 35/100
 
+# Loss Aversion Multiplier (Research: BEHAVIORAL_ECONOMICS.md §4.1)
+# Kahneman-Tversky finding: losses hurt 2.25x more than equivalent gains.
+# Implementation uses 2.0 as conservative middle ground per RESEARCH_VALIDATION.md.
+LOSS_AVERSION_LAMBDA = 2.0
+
 class TrustEngine:
     @deal.post(lambda result: 0.0 < result <= 1.0)
     @deal.post(lambda result: result in [LAMBDA_HIGH_RISK, LAMBDA_LOW_RISK])
@@ -208,10 +213,15 @@ class TrustEngine:
         Returns (new_score, applied_penalty).
         """
         base_penalty = penalty_type.value
+        
+        # Apply loss aversion multiplier (Research: BEHAVIORAL_ECONOMICS.md §4.1)
+        # Penalties are scaled by LOSS_AVERSION_LAMBDA to align with
+        # Kahneman-Tversky findings: losses hurt ~2x more than equivalent gains.
+        adjusted_penalty = base_penalty * LOSS_AVERSION_LAMBDA
 
         # Check remaining cap
         remaining_cap = max(0.0, DAILY_PENALTY_CAP - daily_penalty_sum)
-        applied_penalty = min(base_penalty, remaining_cap)
+        applied_penalty = min(adjusted_penalty, remaining_cap)
 
         # Apply to score
         new_score = max(0.0, current_score - applied_penalty)
@@ -356,4 +366,55 @@ class TrustEngine:
             new_vector.append(val)
             
         return new_vector
+
+    # --- P2 Requirement: Calibration Error Tracking (Brier Score) ---
+
+    def calculate_brier_score(self, predictions: List[tuple[float, float]]) -> float:
+        """
+        Calculates the Brier Score for a set of probability forecasts.
+        Formula: BS = (1/N) * Σ(f_t - o_t)^2
+        Range: 0.0 (Perfect) to 1.0 (Worst).
+        
+        Args:
+            predictions: List of tuples (forecast_probability, outcome).
+                         outcome is 1.0 (Pass) or 0.0 (Fail).
+                         
+        Returns:
+            Brier Score (float). Returns 0.0 if empty.
+        """
+        if not predictions:
+            return 0.0
+            
+        sum_sq_diff = sum((p - o) ** 2 for p, o in predictions)
+        return sum_sq_diff / len(predictions)
+
+class CalibrationTracker:
+    """
+    Maintains a rolling window of predictions outcomes to track system calibration.
+    implements the 'Calibration Error Tracking' mechanism.
+    """
+    def __init__(self, window_size: int = 50):
+        self.window_size = window_size
+        self.history: List[tuple[float, float]] = []
+        
+    def record(self, forecast_prob: float, outcome: bool):
+        """
+        Record a new observation.
+        
+        Args:
+            forecast_prob: The estimated probability (Trust Score)
+            outcome: True if behavior matched expectation (Pass), False if Violation.
+        """
+        val_outcome = 1.0 if outcome else 0.0
+        self.history.append((forecast_prob, val_outcome))
+        
+        # Trim window
+        if len(self.history) > self.window_size:
+            self.history.pop(0)
+            
+    def get_score(self) -> float:
+        """Returns current Brier Score."""
+        if not self.history:
+            return 0.0
+        return sum((p - o) ** 2 for p, o in self.history) / len(self.history)
 

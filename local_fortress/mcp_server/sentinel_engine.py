@@ -101,8 +101,20 @@ class SentinelEngine:
         r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",  # Email
     ]
     
-    def __init__(self, model_url: str = "http://localhost:11434/api/generate"):
-        self.model_url = model_url
+    def __init__(self, model_url: str = None):
+        # Load configuration from agents.json (Dashboard UI integration)
+        try:
+            from .agent_config import get_agent_config
+            config = get_agent_config()
+            self.model_url = model_url or config.get_endpoint()
+            self.model_name = config.get_model("sentinel")
+            self.system_prompt = config.get_prompt("sentinel")
+        except ImportError:
+            # Fallback if agent_config module not available
+            self.model_url = model_url or "http://localhost:11434/api/generate"
+            self.model_name = "qwen2.5-coder:7b"
+            self.system_prompt = "You are a security-focused code auditor."
+        
         self.start_time = 0
     
     def _start_timer(self):
@@ -382,16 +394,31 @@ class SentinelEngine:
         
         return findings
     
+
     def check_static_analysis(self, content: str) -> List[str]:
         """
         Tier 1: External Static Analysis (Pylint, MyPy).
         Spec §3.3.1: "Fast-fail < 5s".
         Runs strict error checking on the provided content.
+        
+        FALLBACK: Uses Heuristic Pattern Scanner if tools are missing.
         """
         findings = []
         import tempfile
         import subprocess
         import os
+        
+        # Import Heuristic Scanner specifically for fallback
+        try:
+            from .heuristic_patterns import get_heuristic_scanner
+            heuristic_fallback_available = True
+        except ImportError:
+            # Try absolute import if relative fails (depending on run context)
+            try:
+                from local_fortress.mcp_server.heuristic_patterns import get_heuristic_scanner
+                heuristic_fallback_available = True
+            except ImportError:
+                heuristic_fallback_available = False
 
         # Only check Python content
         # Heuristic: verify basic python syntax with AST first (already implicit via other checks)
@@ -429,14 +456,24 @@ class SentinelEngine:
 
         except FileNotFoundError:
             # Bootstrapping: degrade gracefully if tools missing
-            findings.append("WARN: Static analysis tools (pylint/mypy) not found in environment.")
+            findings.append("WARN: Static analysis tools (pylint/mypy) not found. Engaging Heuristic Fallback.")
+            
+            if heuristic_fallback_available:
+                scanner = get_heuristic_scanner()
+                # Scan for HIGH/CRITICAL issues in fallback mode to avoid noise
+                heuristic_findings = scanner.scan(content, severity_threshold="HIGH")
+                for f in heuristic_findings:
+                    findings.append(f"HEURISTIC_FALLBACK:{f['id']} {f['name']} (Line {f['line']})")
+            
         except Exception as e:
             findings.append(f"WARN: Static analysis failed: {str(e)}")
+            
         finally:
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
             
         return findings
+
 
     def audit(self, file_path: str, content: str) -> AuditResult:
         """

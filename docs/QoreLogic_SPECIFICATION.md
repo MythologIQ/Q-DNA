@@ -2,7 +2,7 @@
 
 **Version:** 9.0 (Formal Verification Active)
 **Status:** Phase 9.0 Complete - Z3 Integration Active
-**Last Updated:** December 20, 2025
+**Last Updated:** December 22, 2025
 **Audit Status:** Phase 8.5 Fully Verified; Phase 9.1 Z3 Operational
 **Research Foundation:** See [Research Library](./research/INDEX.md) | [Design Validation](./research/synthesis/RESEARCH_VALIDATION.md)
 
@@ -337,6 +337,8 @@ Trust_{A→C} = Trust_{A→B} × Trust_{B→C} × δ
 | δ (damping factor) | **0.5** | Trust halves at each hop                          |
 | Max hops           | **3**   | Dunbar research; trust evaporates beyond 3-4 hops |
 
+**Implementation Note:** QoreLogic implements a "Hybrid Trust Model" that combines EigenTrust global influence with Local Trust path products for transaction validation. This provides Sybil resistance while maintaining practical performance characteristics.
+
 **Sybil Resistance:**
 
 - Transitive damping prevents reputation inflation
@@ -380,6 +382,46 @@ We do not build a perfect system from scratch. We build a system designed to **d
 - **Failure is Data:** A failed verification is as valuable as a pass.
 - **Negative Reinforcement:** Sentinel learns from archived failures, not infinite "good" examples.
 - **Recursive Constraint:** Each failure adds a new rule to prevent recurrence.
+
+#### 6.1.1. Fail Forward as Discovery Mechanism
+
+Structured failure analysis is not pessimism — it is a **generative process**.
+
+The methodology:
+
+1. **Surface-level reasoning** produces an initial solution (Plan A).
+2. **Adversarial review** exposes first-order failure modes.
+3. **Contingency planning** exposes second-order failures (problems created by solutions).
+4. **Deep tracing** of those failures surfaces **superior architectures** invisible from the naive starting position.
+
+> _The path **through** anticipated failure yields better solutions than the path **around** it._
+
+This principle applies to all QoreLogic development:
+
+| Phase        | Action                                     | Outcome                       |
+| :----------- | :----------------------------------------- | :---------------------------- |
+| Proposal     | Present initial architecture               | Candidate solution            |
+| Adversarial  | "What could fail?"                         | First-order risks             |
+| Contingency  | "How do we handle those failures?"         | Mitigations                   |
+| Second-Order | "What problems do mitigations create?"     | Hidden costs revealed         |
+| Synthesis    | "What architecture avoids these entirely?" | **Superior solution emerges** |
+
+**Key Insight:** The superior solution (discovered after multi-depth analysis) often differs structurally from the initial proposal. This is not failure of the initial proposal — it is **proof that the process works**.
+
+> _Exhaustive failure analysis creates the cognitive pressure that surfaces emergent architectures._
+
+#### 6.1.2. Depth Calibration
+
+Failure analysis depth should scale proportionally with decision complexity. Over-analysis of routine tasks wastes resources; under-analysis of architectural decisions invites costly rework.
+
+| Task Type               | Recommended Depth | Rationale                                                    |
+| :---------------------- | :---------------- | :----------------------------------------------------------- |
+| Architectural decisions | 3+ levels         | High structural impact; cost of error is weeks/months        |
+| New feature design      | 2 levels          | Moderate impact; standard contingencies + second-order check |
+| Routine implementation  | 1 level           | Known patterns; test coverage provides feedback              |
+| Bug fixes / refactors   | Minimal           | Localized scope; regression tests catch errors               |
+
+> _Principle: Fail Forward depth ∝ decision complexity_
 
 ### 6.2. Multi-Pass Generation
 
@@ -964,3 +1006,4 @@ The following keys reference documents in the Research Library:
 | 2.3     | 2025-12-17     | Research integration, empirical validation                                                                                                                                        |
 | **2.4** | **2025-12-17** | **Added: Communication protocol (§2.5), Edge deployment (§2.6), 3-tier pipeline (§3.3), Trust dynamics (§5.3.5-6), Disclosure policy (§8.5-6), Governance schema fields (§11.2)** |
 | **9.0** | **2025-12-20** | **Phase 9.0 Complete: Z3 integration active, Trust Dynamics fully operational, Identity Fortress hardened, Contract Verifier implemented**                                        |
+| **9.1** | **2025-12-22** | **Documentation alignment: Version consistency updates across all documentation files**                                                                                           |

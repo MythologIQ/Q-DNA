@@ -60,9 +60,9 @@ def create_genesis_block(conn):
     
     # Insert
     cursor.execute("""
-        INSERT INTO soa_ledger (agent_did, event_type, payload, entry_hash, prev_hash, signature)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (did, "GENESIS_AXIOM", payload_str, entry_hash, prev_hash, signature))
+        INSERT INTO soa_ledger (agent_did, event_type, payload, entry_hash, prev_hash, signature, workspace_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (did, "GENESIS_AXIOM", payload_str, entry_hash, prev_hash, signature, "default"))
     
     conn.commit()
     print(f"✅ Genesis Block Created. Hash: {entry_hash}")

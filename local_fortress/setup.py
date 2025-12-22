@@ -12,7 +12,8 @@ setup(
         "requests",
         "typing_extensions",
         "z3-solver>=4.12.0",
-        "deal>=4.23.0"
+        "deal>=4.23.0",
+        "argon2-cffi>=23.1.0"  # GPU-resistant key derivation (CRYPTOGRAPHIC_STANDARDS.md §7.2)
     ],
     entry_points={
         'console_scripts': [

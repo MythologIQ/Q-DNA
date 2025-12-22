@@ -77,6 +77,45 @@ try {
                  $Header = "HTTP/1.1 200 OK`r`n${BaseHeaders}Content-Type: application/json`r`nConnection: close`r`n`r`n"
                  $Body = '{"status": "ok", "service": "QoreLogic Launcher"}'
             }
+            # --- UI Bridge (Phase 9/10 Extensions) ---
+            elseif ($Url -match "^/api/(verification|trust|identity|ledger)") {
+                $Action = ""
+                # Map URL to Action
+                if ($Url -match "/api/verification/config") { 
+                    if ($Method -eq "POST") { $Action = "set_verification_config" } else { $Action = "get_verification_config" }
+                }
+                elseif ($Url -match "/api/trust/status") { $Action = "get_trust_status" }
+                elseif ($Url -match "/api/identity/list") { $Action = "list_identities" }
+                elseif ($Url -match "/api/identity/rotate") { $Action = "rotate_key" }
+                elseif ($Url -match "/api/ledger/events") { $Action = "query_ledger" }
+                
+                # Extract Body for POST
+                $JsonPayload = "{}"
+                if ($Method -eq "POST") {
+                     $HeaderBodySplit = $RequestRaw -split "`r`n`r`n"
+                     if ($HeaderBodySplit.Count -lt 2) { $HeaderBodySplit = $RequestRaw -split "`n`n" }
+                     if ($HeaderBodySplit.Count -ge 2) { $JsonPayload = $HeaderBodySplit[1].Trim("`0") }
+                }
+                
+                if ($Action) {
+                    $BridgeScript = Join-Path $ProjectRoot "local_fortress\bridge.py"
+                    # Escape quotes for command line (PowerShell parsing madness)
+                    $JsonArg = $JsonPayload.Replace('"', '\"')
+                    
+                    try {
+                        # Invoke Python Bridge
+                        $JsonOut = python "$BridgeScript" $Action --payload "$JsonArg" 2>&1
+                        $Body = [string]::Join("`n", $JsonOut)
+                        $Header = "HTTP/1.1 200 OK`r`n${BaseHeaders}Content-Type: application/json`r`nConnection: close`r`n`r`n"
+                    } catch {
+                        $Body = '{"success": false, "error": "Bridge execution failed"}'
+                        $Header = "HTTP/1.1 500 Internal Error`r`n${BaseHeaders}Content-Type: application/json`r`nConnection: close`r`n`r`n"
+                    }
+                } else {
+                    $Header = "HTTP/1.1 404 Not Found`r`n${BaseHeaders}Connection: close`r`n`r`n"
+                    $Body = '{"error": "Endpoint not found"}'
+                }
+            }
             elseif ($Url -eq "/api/config/mode") {
                 # Determine Ledger Path based on workspace param
                 $LedgerPath = "$env:USERPROFILE\.qorelogic\ledger"

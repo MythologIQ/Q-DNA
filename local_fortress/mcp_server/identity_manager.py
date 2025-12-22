@@ -24,11 +24,24 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.fernet import Fernet
 import base64
 
+# Argon2id support (Research: CRYPTOGRAPHIC_STANDARDS.md §7.2)
+try:
+    from argon2.low_level import hash_secret_raw, Type
+    ARGON2_AVAILABLE = True
+except ImportError:
+    ARGON2_AVAILABLE = False
+
 # Configuration
 KEYSTORE_DIR = Path(__file__).parent.parent / "keystore"
 DB_PATH = Path(__file__).parent.parent / "ledger" / "qorelogic_soa_ledger.db"
 KEY_ROTATION_DAYS = 30
 LEGACY_SALT = b"qorelogic-salt-v1"  # For backward compatibility
+
+# Argon2id parameters (OWASP recommendations for password hashing)
+ARGON2_TIME_COST = 3       # Number of iterations
+ARGON2_MEMORY_COST = 65536 # 64 MB
+ARGON2_PARALLELISM = 4     # Threads
+ARGON2_HASH_LEN = 32       # Output length for Fernet key
 
 @dataclass
 class AgentIdentity:
@@ -50,7 +63,13 @@ class IdentityManager:
     Security Model:
     - Ed25519 for signing (fast, secure, deterministic)
     - Fernet for keyfile encryption (AES-128-CBC)
-    - PBKDF2 for key derivation from passphrase
+    - Argon2id for key derivation (GPU-resistant) - NEW keys
+    - PBKDF2 for key derivation (legacy compatibility)
+    
+    Key Derivation (Research: CRYPTOGRAPHIC_STANDARDS.md §7.2):
+    - New keys: Use Argon2id (memory-hard, GPU-resistant)
+    - Legacy keys: Auto-detected via 'kdf_algorithm' field, use PBKDF2
+    - Rotation: Auto-upgrades legacy keys to Argon2id
     """
     
     def __init__(self, passphrase: str = None):
@@ -107,20 +126,57 @@ class IdentityManager:
             # Fallback to in-memory only (ephemeral)
             self.passphrase = new_phrase
     
-    def _get_cipher(self, salt: bytes) -> Fernet:
-        """Create Fernet cipher from passphrase and specific salt."""
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=salt,
-            iterations=100000,
-            backend=default_backend()
-        )
-        key = base64.urlsafe_b64encode(kdf.derive(self.passphrase.encode()))
+    def _get_cipher(self, salt: bytes, use_argon2: bool = True) -> Fernet:
+        """
+        Create Fernet cipher from passphrase and specific salt.
+        
+        Args:
+            salt: Random salt for key derivation
+            use_argon2: If True and available, use Argon2id (GPU-resistant).
+                       Falls back to PBKDF2 if Argon2 unavailable or for legacy keys.
+        
+        Security Note (CRYPTOGRAPHIC_STANDARDS.md §7.2):
+        Argon2id is memory-hard, providing resistance against GPU/ASIC attacks.
+        PBKDF2 is retained for backward compatibility with existing keyfiles.
+        """
+        if use_argon2 and ARGON2_AVAILABLE:
+            # Argon2id - GPU-resistant key derivation
+            derived_key = hash_secret_raw(
+                secret=self.passphrase.encode(),
+                salt=salt,
+                time_cost=ARGON2_TIME_COST,
+                memory_cost=ARGON2_MEMORY_COST,
+                parallelism=ARGON2_PARALLELISM,
+                hash_len=ARGON2_HASH_LEN,
+                type=Type.ID  # Argon2id variant
+            )
+            key = base64.urlsafe_b64encode(derived_key)
+        else:
+            # PBKDF2 fallback (legacy or when argon2 unavailable)
+            kdf = PBKDF2HMAC(
+                algorithm=hashes.SHA256(),
+                length=32,
+                salt=salt,
+                iterations=100000,
+                backend=default_backend()
+            )
+            key = base64.urlsafe_b64encode(kdf.derive(self.passphrase.encode()))
+        
         return Fernet(key)
     
     def generate_did(self, role: str) -> str:
-        """Generate a Decentralized Identifier."""
+        """
+        Generate a Decentralized Identifier.
+        
+        Note (Research: CRYPTOGRAPHIC_STANDARDS.md §6.1):
+        We use 'did:myth' namespace instead of W3C 'did:key' for:
+        1. Role-based identification (Sentinel, Judge, etc.)
+        2. Human-readable debugging
+        3. No external DID resolver dependency
+        
+        Format: did:myth:{role}:{nonce}
+        Example: did:myth:sentinel:a1b2c3d4e5f6
+        """
         nonce = hashlib.sha256(f"{role}{time.time()}".encode()).hexdigest()[:12]
         return f"did:myth:{role.lower()}:{nonce}"
     
@@ -193,6 +249,7 @@ class IdentityManager:
             "public_key": public_bytes.hex(),
             "private_key_encrypted": encrypted_private.decode(),
             "salt": base64.b64encode(salt).decode(),
+            "kdf_algorithm": "argon2id" if ARGON2_AVAILABLE else "pbkdf2",  # Track KDF version
             "created_at": now,
             "expires_at": identity.expires_at
         }
@@ -248,9 +305,13 @@ class IdentityManager:
             salt = base64.b64decode(data["salt"])
         else:
             salt = LEGACY_SALT
+        
+        # Detect KDF algorithm (legacy keys use PBKDF2, new keys use Argon2id)
+        kdf_algorithm = data.get("kdf_algorithm", "pbkdf2")
+        use_argon2 = (kdf_algorithm == "argon2id")
             
-        # Decrypt private key
-        cipher = self._get_cipher(salt)
+        # Decrypt private key using detected algorithm
+        cipher = self._get_cipher(salt, use_argon2=use_argon2)
         encrypted_private = data["private_key_encrypted"].encode()
         private_bytes = cipher.decrypt(encrypted_private)
         private_key = self.load_private_key(private_bytes)
@@ -353,6 +414,7 @@ class IdentityManager:
             "public_key": new_identity.public_key_hex,
             "private_key_encrypted": encrypted_private.decode(),
             "salt": base64.b64encode(salt).decode(),
+            "kdf_algorithm": "argon2id" if ARGON2_AVAILABLE else "pbkdf2",  # Track KDF version
             "created_at": now,
             "expires_at": new_identity.expires_at,
             "rotated_from": identity.public_key_hex  # Audit trail

@@ -26,6 +26,7 @@ nav:
       - Installation: README.md
   - Specification:
       - Core Spec: QoreLogic_SPECIFICATION.md
+      - Product Requirements: PRD.md
       - Development Plan: DEVELOPMENT_PLAN.md
   - Architecture: ARCHITECTURE.md
   - Research Library:
